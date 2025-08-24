@@ -12,6 +12,7 @@ public interface UserService {
     public User create(SignupRequest signupRequest);
     public User create(User user);
     public boolean checkEmail(String email);
+    public boolean checkNickname(String nickname);
     public void update(Long userId, UpdateRequest dto);
     public void delete(Long userId);
 

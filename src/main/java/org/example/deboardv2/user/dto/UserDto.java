@@ -3,13 +3,21 @@ package org.example.deboardv2.user.dto;
 import jakarta.validation.constraints.Email;
 import lombok.Data;
 import org.example.deboardv2.user.entity.Role;
+import org.example.deboardv2.user.entity.User;
 
 @Data
 public class UserDto {
+    Long id;
+    String email;
     String nickname;
-    String username;
     Role role;
 
-    public UserDto(Long id, String nickname, @Email(message = "올바른 이메일 형식이어야 합니다.") String email) {
+    public static UserDto from(User user) {
+        UserDto userDto = new UserDto();
+        userDto.id = user.getId();
+        userDto.nickname = user.getNickname();
+        userDto.role = user.getRole();
+        userDto.email = user.getEmail();
+        return userDto;
     }
 }

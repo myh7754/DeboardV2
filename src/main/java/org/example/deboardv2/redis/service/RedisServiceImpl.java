@@ -12,7 +12,7 @@ import java.time.Duration;
 public class RedisServiceImpl implements RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // (✔️ 공식처럼 자주 쓰는 코드) - ValueOperations 가져오기
+    // (공식처럼 자주 쓰는 코드) - ValueOperations 가져오기
     private ValueOperations<String, Object> valueOps() {
         return redisTemplate.opsForValue();
     }

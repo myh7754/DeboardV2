@@ -43,12 +43,18 @@ public class JwtTokenProvider {
     }
 
     //쿠키를 이용하여 토큰 담기
-    public ResponseCookie tokenAddCookie(String token, Duration expired) {
+    public ResponseCookie tokenAddCookie(String tokenName,String token, Duration expired) {
         // 여기서 secure=true인데 로컬 환경에서 https가 아니면 브라우저가 쿠키를 저장하지 않음
-        return ResponseCookie.from("accessToken", token)
+        String path;
+        if (tokenName.equals("accessToken")) {
+            path="/";
+        } else {
+            path = "/api/auth/refresh";
+        }
+        return ResponseCookie.from(tokenName, token)
                 .httpOnly(true)
                 .secure(false)
-                .path("/")
+                .path(path)
                 .sameSite("Strict")
                 .maxAge(expired)
                 .build();

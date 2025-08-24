@@ -40,11 +40,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refresh = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getRefresh());
 
         // 쿠키에 access 저장
-        ResponseCookie accessCookie = jwtTokenProvider.tokenAddCookie(access, jwtConfig.getValidation().getAccess());
+        ResponseCookie accessCookie = jwtTokenProvider.tokenAddCookie("accessToken",access, jwtConfig.getValidation().getAccess());
         //ResponseCookie는 addHeader로 직접 넣어줘야함
         response.addHeader("Set-Cookie", accessCookie.toString());
         // 쿠키에 refresh 저장
-        ResponseCookie refreshCookie = jwtTokenProvider.tokenAddCookie(refresh, jwtConfig.getValidation().getRefresh());
+        ResponseCookie refreshCookie = jwtTokenProvider.tokenAddCookie("refreshToken",refresh, jwtConfig.getValidation().getRefresh());
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
         // redis에 refresh 저장

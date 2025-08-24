@@ -9,10 +9,7 @@ import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.config.JwtConfig;
-import org.example.deboardv2.user.dto.JwtToken;
-import org.example.deboardv2.user.dto.SignInRequest;
-import org.example.deboardv2.user.dto.SignupRequest;
-import org.example.deboardv2.user.dto.TokenBody;
+import org.example.deboardv2.user.dto.*;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.service.AuthService;
 import org.example.deboardv2.user.service.JwtTokenProvider;
@@ -57,17 +54,21 @@ public class AuthServiceImpl implements AuthService {
 
     //로그인
     @Override
-    public JwtToken signIn(SignInRequest signInRequest) {
+    public LoginResponse signIn(SignInRequest signInRequest) {
         User readUser = userService.getUserById(signInRequest.getEmail());
+        if (!readUser.getEmail().equals(signInRequest.getEmail())) {
+            throw new CustomException(ErrorCode.EMAIL_MISMATCH);
+        }
         if (!passwordEncoder.matches(signInRequest.getPassword(), readUser.getPassword())) {
-            throw new CustomException(ErrorCode.PASSWORD_MISSMATCH);
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
         TokenBody tokenBody = new TokenBody(readUser.getId(), readUser.getRole());
         // access token
         String access = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());
         String refresh = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getRefresh());
         redisService.setValueWithExpire("refresh:"+readUser.getId(), refresh, jwtConfig.getValidation().getRefresh());
-        return new JwtToken(access,refresh);
+
+        return new LoginResponse(new JwtToken(access, refresh),UserDto.from(readUser));
     }
 
     @Override
@@ -94,14 +95,19 @@ public class AuthServiceImpl implements AuthService {
         return email;
     }
 
+
     // 인증번호 검사
     @Override
     public Boolean validEmail(String email, String inputCode) {
         String redisKey = EMAIL_PREFIX + email;
         Object value = redisService.getValue(redisKey);
+        log.info("value = {}", value);
+        log.info("inputCode = {}", inputCode);
         if (value == null || !value.equals(inputCode)) {
+            log.info("이메일 인증 불일치");
             throw new CustomException(ErrorCode.EMAIL_VERIFICATION_ERROR);
         }
+        log.info("true 여부 {}", value.equals(inputCode));
         redisService.setValue(EMAIL_PREFIX+"certified:"+email,true);
         redisService.deleteValue(redisKey);
         return true;

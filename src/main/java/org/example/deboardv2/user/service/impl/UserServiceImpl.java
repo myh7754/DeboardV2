@@ -68,6 +68,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean checkNickname(String nickname) {
+        if (userRepository.existsByNickname(nickname)) {
+            throw new CustomException(ErrorCode.NICKNAME_DUPLICATED);
+        }
+        return false;
+    }
+
+    @Override
     @Transactional
     public void update(Long userId, UpdateRequest dto) {
         User referenceById = userRepository.getReferenceById(userId);

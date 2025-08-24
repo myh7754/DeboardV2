@@ -6,10 +6,12 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
     //user
-    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "멤버를 찾을 수 없습니다."),
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 회원을 찾을 수 없습니다."),
 
     //auth
-    PASSWORD_MISSMATCH(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다"),
+    NICKNAME_DUPLICATED(HttpStatus.BAD_REQUEST, "사용중인 닉네임 입니다."),
+    EMAIL_MISMATCH(HttpStatus.UNAUTHORIZED, "계정이 일치하지 않습니다"),
+    PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다"),
     EMAIL_DUPLICATED(HttpStatus.BAD_REQUEST, "가입된 이메일 입니다."),
     EMAIL_VERIFICATION_ERROR(HttpStatus.BAD_REQUEST, "이메일 인증이 실패하였습니다."),
     EMAIL_NOT_VERIFIED( HttpStatus.UNAUTHORIZED,"이메일 인증이 필요합니다."),
