@@ -8,6 +8,8 @@ public interface UserService {
     public User getUserById(Long userId);
     public User getUserById(String email);
     public User getUserReferenceById(Long userId);
+    public Long getCurrentUserId();
+    public String getCurrentUserNickname();
     public User getCurrentUser();
     public User create(SignupRequest signupRequest);
     public User create(User user);

@@ -14,4 +14,7 @@ public interface AuthService {
     public String sendEmailAuthCode(String email);
     public Boolean validEmail(String email, String inputCode);
     public String reissue(String refresh);
+    public void authCheck(Long id, String entityType);
+//    public Boolean authCheck(String nickname);
+
 }

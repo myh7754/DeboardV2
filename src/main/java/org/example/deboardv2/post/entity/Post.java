@@ -3,14 +3,16 @@ package org.example.deboardv2.post.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.deboardv2.comment.entity.Comments;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.User;
 
 @Entity
 @Getter
 @NoArgsConstructor
-public class Post {
+public class Post extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
@@ -24,9 +26,6 @@ public class Post {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "likes_id")
 //    private Likes likes;
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "comments_id")
-//    private Comments comments;
 
     public static Post from(PostCreateDto postDto, User user) {
         Post post = new Post();

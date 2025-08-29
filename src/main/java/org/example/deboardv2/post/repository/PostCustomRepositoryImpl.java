@@ -4,6 +4,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.entity.QPost;
 import org.example.deboardv2.user.entity.QUser;
@@ -18,6 +19,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class PostCustomRepositoryImpl implements PostCustomRepository {
     private final JPAQueryFactory queryFactory;
     QPost qPost = QPost.post;
@@ -33,7 +35,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qUser.nickname
+                        qUser.nickname,
+                        qPost.createdAt
                 ))
                 .from(qPost)
                 .join(qPost.author, qUser)
@@ -41,6 +44,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
+
 //               Dto에 QueryProjection 사용한경우
 //                .select(new QPostDto(post.title, post.content, user.nickname))
 //                .from(post)
@@ -64,7 +68,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qUser.nickname
+                        qUser.nickname,
+                        qPost.createdAt
                         ))
                 .from(qPost)
                 .join(qPost.author, qUser)

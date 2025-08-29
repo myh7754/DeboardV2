@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +32,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void save(PostCreateDto post) {
-        User user = userService.getUserByNickname(post.getAuthor());
-        postRepository.save(Post.from(post, user));
+    public PostDetails save(PostCreateDto post) {
+        User user = userService.getCurrentUser();
+        Post save = postRepository.save(Post.from(post, user));
+        return PostDetails.from(save);
     }
 
     @Override
@@ -67,13 +69,26 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void delete(Long postId) {
-        postRepository.deleteById(postId);
+        int deletedCount = postRepository.deleteByIdAndAuthorId(postId, userService.getCurrentUserId());
+        if (deletedCount == 0) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+//        postRepository.deleteById(postId);
     }
 
     @Override
     @Transactional
-    public void update(PostUpdateDto postUpdateDto, Long postId) {
-        Post postReferenceById = getPostReferenceById(postId);
-        postReferenceById.update(postUpdateDto);
+    public void update(PostUpdateDto dto, Long postId) {
+        int updateCount = postRepository.updateByIdAndAuthorId(
+                postId,
+                dto.title,
+                dto.content,
+                userService.getCurrentUserId()
+        );
+        if (updateCount == 0) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+//        Post postReferenceById = getPostReferenceById(postId);
+//        postReferenceById.update(dto);
     }
 }

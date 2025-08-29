@@ -69,6 +69,7 @@ public class AuthController {
     public ResponseEntity<?> logout(@CookieValue(name = "refreshToken", required = false) String refreshToken,
                                     @CookieValue(name = "accessToken",  required = false) String accessToken,
                                     HttpServletResponse response) {
+        log.info("로그아웃 처리");
         authService.logout(refreshToken);
         // 쿠키 초기화
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken","")
@@ -100,7 +101,14 @@ public class AuthController {
         //ResponseCookie는 addHeader로 직접 넣어줘야함
         response.addHeader("Set-Cookie", accessCookie.toString());
 
+        return ResponseEntity.ok().body("ok");
+    }
 
+    @GetMapping("/{entityType}/{id}")
+    public ResponseEntity<?> authCheck(@PathVariable String entityType, @PathVariable Long id) {
+        log.info("entity TYpe{}",entityType);
+        log.info("id {}", id);
+        authService.authCheck(id,  entityType);
         return ResponseEntity.ok().body("ok");
     }
 }

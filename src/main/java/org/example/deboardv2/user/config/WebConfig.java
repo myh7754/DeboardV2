@@ -12,9 +12,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins(redirectUrl)
-                .allowedMethods("*")
+        registry.addMapping("/api/**") // API 경로만 CORS 허용
+                .allowedOriginPatterns(redirectUrl) // Boot 3.x 권장 방식
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

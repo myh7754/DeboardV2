@@ -5,6 +5,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
@@ -17,6 +18,8 @@ import org.example.deboardv2.user.service.UserService;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private static final String EMAIL_PREFIX = "email:";
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtConfig jwtConfig;
+    private final PostRepository postRepository;
 
     //회원가입
     @Override
@@ -62,19 +66,22 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(signInRequest.getPassword(), readUser.getPassword())) {
             throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
-        TokenBody tokenBody = new TokenBody(readUser.getId(), readUser.getRole());
+        TokenBody tokenBody = new TokenBody(readUser.getId(),readUser.getNickname() ,readUser.getRole());
         // access token
         String access = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());
         String refresh = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getRefresh());
-        redisService.setValueWithExpire("refresh:"+readUser.getId(), refresh, jwtConfig.getValidation().getRefresh());
-
         return new LoginResponse(new JwtToken(access, refresh),UserDto.from(readUser));
     }
 
     @Override
     public void logout(String refresh) {
         // redis에 refresh 저장 (블랙리스트)
+        if (refresh == null || refresh.isEmpty()) {
+            // 토큰이 없으면 바로 리턴
+            return;
+        }
         TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
+
         redisService.setValueWithExpire("refresh:"+tokenBody.getMemberId(), refresh, jwtConfig.getValidation().getRefresh());
     }
 
@@ -101,13 +108,9 @@ public class AuthServiceImpl implements AuthService {
     public Boolean validEmail(String email, String inputCode) {
         String redisKey = EMAIL_PREFIX + email;
         Object value = redisService.getValue(redisKey);
-        log.info("value = {}", value);
-        log.info("inputCode = {}", inputCode);
         if (value == null || !value.equals(inputCode)) {
-            log.info("이메일 인증 불일치");
             throw new CustomException(ErrorCode.EMAIL_VERIFICATION_ERROR);
         }
-        log.info("true 여부 {}", value.equals(inputCode));
         redisService.setValue(EMAIL_PREFIX+"certified:"+email,true);
         redisService.deleteValue(redisKey);
         return true;
@@ -115,18 +118,45 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String reissue(String refresh) {
-        TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
-        // 만약 이게 있다면 블랙리스트에 등록된거
-        Object blackList = redisService.getValue("refresh:" + tokenBody.getMemberId());
-        if  (blackList != null && blackList.equals(refresh)) {
+        boolean b = jwtTokenProvider.validateToken(refresh);
+        if (b) {
+            TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
+            // 만약 이게 있다면 블랙리스트에 등록된거
+            Object blackList = redisService.getValue("refresh:" + tokenBody.getMemberId());
+            if  (blackList != null && blackList.equals(refresh)) {
+                throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+            }
+            // 없다면 여기서 등록되지 않은 refreshToken임
+            // 여기까지 왔다면 올바른 인증을 한거임 그럼 accessToken발급
+
+            return jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());
+        } else {
             throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
-        // 없다면 여기서 등록되지 않은 refreshToken임
-        // 여기까지 왔다면 올바른 인증을 한거임 그럼 accessToken발급
+    }
 
-        return jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());
+    @Override
+    public void authCheck(Long id,String entityType) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        TokenBody tokenBody = (TokenBody) authentication.getPrincipal();
+        Long memberId = tokenBody.getMemberId();
+        boolean authorized = switch (entityType) {
+            case "POST" -> postRepository.existsByIdAndAuthorId(id, memberId);
+            default -> false;
+        };
+        if (!authorized) {
+            // 권한 없으면 FORBIDDEN 예외 던지기
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
 
     }
+//
+//    @Override
+//    public Boolean authCheck(String nickname) {
+//        String currentUserNickname = userService.getCurrentUserNickname();
+//        return currentUserNickname.equals(nickname);
+//    }
 
     // 6자리 랜덤숫자 생성
     private String generateRandomCode() {

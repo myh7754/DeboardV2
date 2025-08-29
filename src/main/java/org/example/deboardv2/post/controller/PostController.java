@@ -1,6 +1,7 @@
 package org.example.deboardv2.post.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@Slf4j
 public class PostController {
     private final PostService postService;
     @GetMapping("/posts")
@@ -31,9 +33,8 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public String createPost(@RequestBody PostCreateDto postDto) {
-        postService.save(postDto);
-        return "created";
+    public ResponseEntity<?> createPost(@RequestBody PostCreateDto postDto) {
+        return ResponseEntity.ok(postService.save(postDto));
     }
 
     @PutMapping("/posts/{postId}")

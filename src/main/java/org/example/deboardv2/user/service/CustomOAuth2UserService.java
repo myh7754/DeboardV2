@@ -36,6 +36,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         memberDetails.setId(user.getId());
         memberDetails.setRole(user.getRole().toString());
+        memberDetails.setName(user.getNickname());
         return memberDetails;
     }
 }

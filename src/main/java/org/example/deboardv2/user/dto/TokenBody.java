@@ -10,5 +10,6 @@ import org.example.deboardv2.user.entity.Role;
 @NoArgsConstructor
 public class TokenBody {
     private Long memberId;
+    private String nickname;
     private Role role;
 }

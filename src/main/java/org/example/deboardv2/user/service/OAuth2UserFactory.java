@@ -10,6 +10,7 @@ import java.util.Map;
 public class OAuth2UserFactory {
     public static MemberDetails create(String provider, OAuth2User oauth2User) {
         Map<String, Object> attributes = oauth2User.getAttributes();
+        log.info("attributes: {}", attributes);
         switch (provider.toUpperCase()) {
             case "GOOGLE" -> {
                 return MemberDetails.builder()
@@ -22,7 +23,7 @@ public class OAuth2UserFactory {
             case "KAKAO" -> {
                 Map<String, String> properties = (Map<String, String>) attributes.get("properties");
                 return MemberDetails.builder()
-                        .name(properties.get("nickname"))
+                        .name(attributes.get("id").toString())
                         .email(attributes.get("id").toString() + "@kakao.com")
                         .provider(provider.toUpperCase())
                         .attributes(attributes)
@@ -31,7 +32,7 @@ public class OAuth2UserFactory {
             case "NAVER" -> {
                 Map<String, String> properties = (Map<String, String>) attributes.get("response");
                 return MemberDetails.builder()
-                        .name(properties.get("name"))
+                        .name(properties.get("email"))
                         .email(properties.get("email"))
                         .provider(provider.toUpperCase())
                         .attributes(attributes)
