@@ -1,6 +1,7 @@
 package org.example.deboardv2.comment.repository;
 
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,8 @@ public class CommentsCustomRepositoryImpl implements CommentsCustomRepository {
     private final JPAQueryFactory queryFactory;
     QComments qComments =  QComments.comments;
     QUser qUser = QUser.user;
+    QComments qChildren = new QComments("children"); // 대댓글 alias
+
 
     @Override
     public Page<CommentsDetail> findAll(Long postId, Pageable pageable) {
@@ -31,12 +34,19 @@ public class CommentsCustomRepositoryImpl implements CommentsCustomRepository {
                         qComments.content,
                         qComments.createdAt,
                         qUser.nickname.as("author"),          // <- alias 지정
-                        qComments.parent.commentsId.as("parentId") // <- alias 지정
+                        qComments.parent.commentsId.as("parentId"), // <- alias 지정
+                        qChildren.commentsId.countDistinct().as("repliesCount")
                 ))
                 .from(qComments)
                 .join(qComments.author, qUser)
+                .leftJoin(qComments.children, qChildren)
                 .where(qComments.post.id.eq(postId)
                         .and(qComments.parent.isNull())) // 부모댓글만 호출
+                .groupBy(qComments.commentsId,
+                        qComments.content,
+                        qComments.createdAt,
+                        qUser.nickname,
+                        qComments.parent.commentsId)
                 .orderBy(qComments.commentsId.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -63,7 +73,8 @@ public class CommentsCustomRepositoryImpl implements CommentsCustomRepository {
                         qComments.content,
                         qComments.createdAt,
                         qUser.nickname.as("author"),
-                        qComments.parent.commentsId.as("parentId")
+                        qComments.parent.commentsId.as("parentId"),
+                        Expressions.asNumber(0L) // 대댓글은 항상 0
                 ))
                 .from(qComments)
                 .join(qComments.author, qUser)

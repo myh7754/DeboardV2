@@ -11,6 +11,7 @@ import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
+import org.example.deboardv2.user.service.AuthService;
 import org.example.deboardv2.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,7 @@ public class CommentsServiceImpl implements CommentsService {
     private final CommentsRepository commentsRepository;
     private final PostRepository postRepository;
     private final UserService userService;
+    private final AuthService authService;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,6 +68,7 @@ public class CommentsServiceImpl implements CommentsService {
     @Override
     @Transactional
     public void updateComments(CommentsRequest request, Long commentId) {
+        authService.authCheck(commentId, "COMMENT");
         Comments commentsById = getCommentsById(commentId);
         commentsById.updateContent(request);
     }

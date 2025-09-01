@@ -5,6 +5,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.comment.repository.CommentsRepository;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
@@ -41,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtConfig jwtConfig;
     private final PostRepository postRepository;
+    private final CommentsRepository commentsRepository;
 
     //회원가입
     @Override
@@ -142,6 +144,7 @@ public class AuthServiceImpl implements AuthService {
         Long memberId = tokenBody.getMemberId();
         boolean authorized = switch (entityType) {
             case "POST" -> postRepository.existsByIdAndAuthorId(id, memberId);
+            case "COMMENT" -> commentsRepository.existsByCommentsIdAndAuthorId(id, memberId);
             default -> false;
         };
         if (!authorized) {

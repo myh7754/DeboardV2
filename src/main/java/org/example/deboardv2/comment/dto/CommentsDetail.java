@@ -16,4 +16,5 @@ public class CommentsDetail {
     private LocalDateTime createdAt;
     private String author;
     private Long parentId;
+    private Long repliesCount;
 }

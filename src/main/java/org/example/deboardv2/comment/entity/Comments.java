@@ -7,6 +7,9 @@ import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.User;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 public class Comments extends BaseEntity {
@@ -23,9 +26,12 @@ public class Comments extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade =  CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comments parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Comments> children = new ArrayList<>();
 
 
     public static Comments from(CommentsRequest dto, User user, Post post, Comments parent) {
