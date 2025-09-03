@@ -7,6 +7,7 @@ import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.service.PostService;
+import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +18,24 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class PostController {
     private final PostService postService;
+    private final SearchService searchService;
 
-    @Operation(summary = "게시글 전체 조회", description = "등록된 모든 게시글을 조회합니다.")
+    @Operation(summary = "게시글 목록 조회", description = "검색된 혹은 모든 게시글을 조회합니다.")
     @GetMapping("/posts")
     public ResponseEntity<?> getAllPosts(
+            @RequestParam(defaultValue = "title", required = false) String searchType,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         // sort = createdAt, desc -> ["createdAt", "eesc"]
-        Page<PostDetails> postDtos = postService.readAll(size, page);
+        Page<PostDetails> postDtos;
+        if (keyword == null || keyword.isBlank()) {
+            postDtos = postService.readAll(size, page);
+        }  else {
+            postDtos = searchService.search(searchType, keyword, page, size);
+        }
         return ResponseEntity.ok(postDtos);
     }
 

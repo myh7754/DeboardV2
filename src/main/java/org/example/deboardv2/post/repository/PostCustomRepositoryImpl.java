@@ -1,6 +1,7 @@
 package org.example.deboardv2.post.repository;
 
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -40,9 +41,9 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 ))
                 .from(qPost)
                 .join(qPost.author, qUser)
-                .orderBy(qPost.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .orderBy(qPost.createdAt.desc())
                 .fetch();
 
 //               Dto에 QueryProjection 사용한경우
@@ -75,5 +76,54 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .join(qPost.author, qUser)
                 .where(qPost.id.eq(postId))
                 .fetchOne();
+    }
+
+    private BooleanExpression buildCondition(String searchType, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null; // 전체 조회
+        }
+        switch (searchType) {
+            case "title":
+                return qPost.title.containsIgnoreCase(keyword);
+            case "content":
+                return qPost.content.containsIgnoreCase(keyword);
+            case "author":
+                return qUser.nickname.containsIgnoreCase(keyword);
+            case "titleContent":
+                return qPost.title.containsIgnoreCase(keyword)
+                        .or(qPost.content.containsIgnoreCase(keyword));
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public Page<PostDetails> searchPost(Pageable pageable, String searchType, String keyword) {
+        BooleanExpression condition = buildCondition(searchType, keyword);
+
+        List<PostDetails> results = queryFactory.
+                select(Projections.fields(
+                        PostDetails.class,
+                        qPost.id,
+                        qPost.title,
+                        qPost.content,
+                        qUser.nickname,
+                        qPost.createdAt
+                ))
+                .from(qPost)
+                .join(qPost.author, qUser)
+                .where(condition)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(qPost.createdAt.desc())
+                .fetch();
+
+        Long total = queryFactory
+                .select(qPost.count())
+                .from(qPost)
+                .where(condition)
+                .fetchOne();
+
+        return new PageImpl<>(results, pageable, total);
     }
 }
