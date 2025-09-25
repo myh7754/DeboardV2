@@ -86,7 +86,6 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token);
 
-        log.info("JWT parsed : {}", parsed);
         String subject = parsed.getPayload().getSubject();
         String roleStr = parsed.getPayload().get("role", String.class);
         Role role = Role.valueOf(roleStr);

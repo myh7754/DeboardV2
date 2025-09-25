@@ -33,7 +33,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         MemberDetails memberDetails = (MemberDetails) authentication.getPrincipal();
         TokenBody tokenBody = new TokenBody(memberDetails.getId(),memberDetails.getName() ,Role.valueOf(memberDetails.getRole()));
-        log.info("oauth memberDetails {}",  memberDetails);
 
         // access token
         String access = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());

@@ -10,7 +10,6 @@ import java.util.Map;
 public class OAuth2UserFactory {
     public static MemberDetails create(String provider, OAuth2User oauth2User) {
         Map<String, Object> attributes = oauth2User.getAttributes();
-        log.info("attributes: {}", attributes);
         switch (provider.toUpperCase()) {
             case "GOOGLE" -> {
                 return MemberDetails.builder()

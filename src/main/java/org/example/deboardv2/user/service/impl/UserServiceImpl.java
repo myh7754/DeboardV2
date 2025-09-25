@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 
 //import static org.example.deboardv2.system.exception.ExceptionHandler.USER_NOT_FOUND_ERROR;
 
@@ -55,6 +57,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Optional<Long> getCurrentUserIdifExists() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+            return Optional.empty();
+        }
+        TokenBody tokenBody = (TokenBody) authentication.getPrincipal();
+        return Optional.of(tokenBody.getMemberId());
+    }
+
+    @Override
     public String getCurrentUserNickname() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication.getPrincipal().equals("anonymousUser")) {
@@ -71,7 +84,6 @@ public class UserServiceImpl implements UserService {
         if (authentication.getPrincipal().equals("anonymousUser")) {
             throw new CustomException(ErrorCode.LOGIN_REQUIRED);
         }
-        log.info("Current User: {}", authentication.getPrincipal());
         TokenBody tokenBody = (TokenBody) authentication.getPrincipal();
         Long memberId = tokenBody.getMemberId();
 

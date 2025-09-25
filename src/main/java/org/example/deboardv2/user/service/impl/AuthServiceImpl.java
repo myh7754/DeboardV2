@@ -16,6 +16,7 @@ import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.service.AuthService;
 import org.example.deboardv2.user.service.JwtTokenProvider;
 import org.example.deboardv2.user.service.UserService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -49,13 +50,18 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public User signUp(SignupRequest signupRequest) {
         String email  = signupRequest.getEmail();
-        // 이메일 미인증시 이메일 인증 요구
-        if (!Boolean.TRUE.equals(redisService.getValue(EMAIL_PREFIX+"certified:"+email))){
-            throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+        try {
+            // 이메일 미인증시 이메일 인증 요구
+            if (!Boolean.TRUE.equals(redisService.getValue(EMAIL_PREFIX+"certified:"+email))){
+                throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+            }
+            redisService.deleteValue(EMAIL_PREFIX+"certified:"+email);
+            signupRequest.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+            return userService.create(signupRequest);
+        } catch(DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.NICKNAME_DUPLICATED);
         }
-        redisService.deleteValue(EMAIL_PREFIX+"certified:"+email);
-        signupRequest.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
-        return userService.create(signupRequest);
+
     }
 
     //로그인
@@ -177,7 +183,6 @@ public class AuthServiceImpl implements AuthService {
             message.setFrom("myh4755@gmail.com"); // 발신자 이메일
             mailSender.send(message);
         } catch (Exception e) {
-            log.info("메일 발송 실패");
             throw new RuntimeException(e);
         }
     }

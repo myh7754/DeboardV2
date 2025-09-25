@@ -27,6 +27,9 @@ public class Post extends BaseEntity {
 //    @JoinColumn(name = "likes_id")
 //    private Likes likes;
 
+    @Column(name = "like_count",nullable = false)
+    private int likeCount = 0;
+
     public static Post from(PostCreateDto postDto, User user) {
         Post post = new Post();
         post.title = postDto.getTitle();
@@ -38,6 +41,21 @@ public class Post extends BaseEntity {
     public void update(PostUpdateDto postUpdateDto) {
         this.title = postUpdateDto.getTitle();
         this.content = postUpdateDto.getContent();
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if(this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
+    public void test() {
+        this.id = 1000L;
+        this.likeCount = 0;
     }
 
 }

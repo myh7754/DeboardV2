@@ -17,6 +17,7 @@ public class PostDetails {
     String content;
     String nickname;
     LocalDateTime createdAt;
+    int likeCount;
 
     public static PostDetails from(Post post) {
         PostDetails postDetails = new PostDetails();
@@ -24,6 +25,7 @@ public class PostDetails {
         postDetails.setTitle(post.getTitle());
         postDetails.setContent(post.getContent());
         postDetails.setCreatedAt(post.getCreatedAt());
+        postDetails.setLikeCount(post.getLikeCount());
         return postDetails;
     }
 }

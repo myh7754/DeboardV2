@@ -37,7 +37,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.title,
                         qPost.content,
                         qUser.nickname,
-                        qPost.createdAt
+                        qPost.createdAt,
+                        qPost.likeCount
                 ))
                 .from(qPost)
                 .join(qPost.author, qUser)
@@ -70,8 +71,9 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.title,
                         qPost.content,
                         qUser.nickname,
-                        qPost.createdAt
-                        ))
+                        qPost.createdAt,
+                        qPost.likeCount
+                ))
                 .from(qPost)
                 .join(qPost.author, qUser)
                 .where(qPost.id.eq(postId))
@@ -95,6 +97,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
             default:
                 return null;
         }
+
     }
 
     @Override
@@ -107,7 +110,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qUser.nickname,
+                        qPost.author.nickname.as("nickname"),
                         qPost.createdAt
                 ))
                 .from(qPost)
@@ -121,6 +124,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         Long total = queryFactory
                 .select(qPost.count())
                 .from(qPost)
+                .join(qPost.author, qUser)
                 .where(condition)
                 .fetchOne();
 

@@ -30,7 +30,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveTokenCookie(request);
-        log.info("필터 실행 {}", token);
         if (token != null && jwtTokenProvider.validateToken(token)) {
             TokenBody tokenBody = jwtTokenProvider.parseJwt(token);
             Long memberId = tokenBody.getMemberId();

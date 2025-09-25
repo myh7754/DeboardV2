@@ -52,7 +52,6 @@ public class CommentsController {
     @Operation(summary = "댓글 작성", description = "새로운 댓글을 작성합니다.")
     @PostMapping
     public ResponseEntity<?> createComment(@RequestBody CommentsRequest comment) {
-        log.info("comments: {}", comment);
         commentsService.createComments(comment);
         return ResponseEntity.ok().build();
     }

@@ -27,21 +27,18 @@ public class AuthController {
     @Operation(summary = "이메일 인증 코드 요청", description = "사용자가 입력한 이메일로 인증 코드를 발송합니다.")
     @GetMapping("/email/code")
     public ResponseEntity<?> validEmail(@RequestParam String email) {
-        log.info("이메일 중복 체크 검사 {}", email);
         return ResponseEntity.ok().body(authService.sendEmailAuthCode(email));
     }
 
     @Operation(summary = "닉네임 중복 검사", description = "닉네임이 사용 가능한지 확인합니다.")
     @GetMapping("/valid/nickname")
     public ResponseEntity<?> validNickname(@RequestParam String nickname) {
-        log.info("닉네임 중복체크 들어옴 {}", nickname);
         return ResponseEntity.ok().body(userService.checkNickname(nickname));
     }
 
     @Operation(summary = "이메일 인증 코드 검증", description = "사용자가 입력한 인증 코드가 올바른지 검증합니다.")
     @PostMapping("/email/verify")
     public ResponseEntity<?> validByNumber(@RequestParam String email, @RequestBody String code) {
-        log.info("이메일 인증 코드 검사 {}", code);
         authService.validEmail(email, code);
         return ResponseEntity.ok().body("ok");
     }
@@ -76,7 +73,6 @@ public class AuthController {
     public ResponseEntity<?> logout(@CookieValue(name = "refreshToken", required = false) String refreshToken,
                                     @CookieValue(name = "accessToken",  required = false) String accessToken,
                                     HttpServletResponse response) {
-        log.info("로그아웃 처리");
         authService.logout(refreshToken);
         // 쿠키 초기화
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken","")
@@ -114,8 +110,6 @@ public class AuthController {
 
     @GetMapping("/{entityType}/{id}")
     public ResponseEntity<?> authCheck(@PathVariable String entityType, @PathVariable Long id) {
-        log.info("entity TYpe{}",entityType);
-        log.info("id {}", id);
         authService.authCheck(id,  entityType);
         return ResponseEntity.ok().body("ok");
     }

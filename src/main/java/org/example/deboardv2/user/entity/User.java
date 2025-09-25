@@ -16,7 +16,9 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String nickname;
+    @Column(unique = true, nullable = false)
     @Email(message = "올바른 이메일 형식이어야 합니다.")
     private String email;
     private String password;

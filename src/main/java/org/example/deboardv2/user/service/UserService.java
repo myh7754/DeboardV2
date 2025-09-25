@@ -4,11 +4,14 @@ import org.example.deboardv2.user.dto.SignupRequest;
 import org.example.deboardv2.user.dto.UpdateRequest;
 import org.example.deboardv2.user.entity.User;
 
+import java.util.Optional;
+
 public interface UserService {
     public User getUserById(Long userId);
     public User getUserById(String email);
     public User getUserReferenceById(Long userId);
     public Long getCurrentUserId();
+    public Optional<Long> getCurrentUserIdifExists();
     public String getCurrentUserNickname();
     public User getCurrentUser();
     public User create(SignupRequest signupRequest);
