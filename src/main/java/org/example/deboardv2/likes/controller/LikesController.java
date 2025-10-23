@@ -19,6 +19,8 @@ public class LikesController {
     @PostMapping("/{postId}")
     public ResponseEntity<?> toggleLike(@PathVariable("postId") Long postId) {
         likeService.toggleLike(postId);
+//        likeService.toggleLikeRecord(postId);
+//        likeService.updateLikeCount(postId);
         return ResponseEntity.ok().build();
     }
 

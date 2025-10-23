@@ -78,7 +78,7 @@ public class LoggingAspect {
     @Pointcut("execution(* org.example.deboardv2..controller..*(..))")
     public void controllerLayer() {}
 
-    @Pointcut("execution(* org.example.deboardv2..service..*(..))")
+    @Pointcut("within(org.example.deboardv2..service..*)")
     public void serviceLayer() {}
 
     // Controller 로깅: 입력 파라미터 포함
@@ -90,7 +90,7 @@ public class LoggingAspect {
                 ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         // 파라미터 로깅
         String params = formatParams(joinPoint.getArgs());
-        log.info("[{}] START {} {} {} params={}",
+        log.debug("[{}] START {} {} {} params={}",
                 traceId,
                 request.getMethod(),
                 request.getRequestURI(),
@@ -106,7 +106,7 @@ public class LoggingAspect {
             if (duration > 500) {
                 log.warn("[{}] SLOW {} - {}ms", traceId, method, duration);
             } else {
-                log.info("[{}] END {} - {}ms", traceId, method, duration);
+                log.debug("[{}] END {} - {}ms", traceId, method, duration);
             }
 
             return result;

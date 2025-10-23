@@ -21,41 +21,21 @@ public class LikesServiceImpl implements LikeService {
     private final UserService userService;
 
     @Override
-    @Transactional
     public void toggleLike(Long postId) {
-        Post post = postService.getPostById(postId);
         User user = userService.getCurrentUser();
-
         Optional<Likes> likes = likesRepository.findByPostIdAndUserId(postId, user.getId());
+
         if (likes.isPresent()) {
             likesRepository.delete(likes.get());
-            post.decreaseLikeCount();
-
         } else {
-            Likes entity = Likes.toEntity(user, post);
-            post.increaseLikeCount();
+            Likes entity = Likes.toEntity(user, postService.getPostById(postId));
             likesRepository.save(entity);
-
         }
 
-    }
-
-    @Override
-    public void toggleLike(Long postId, Long userId) {
-        Post post = postService.getPostById(postId);
-        User user = userService.getUserById(userId);
-
-        Optional<Likes> likes = likesRepository.findByPostIdAndUserId(postId, user.getId());
-        if (likes.isPresent()) {
-            likesRepository.delete(likes.get());
-            post.decreaseLikeCount();
-
-        } else {
-            Likes entity = Likes.toEntity(user, post);
-            post.increaseLikeCount();
-            likesRepository.save(entity);
-
-        }
+        // 같은 트랜잭션 내에서 카운트 업데이트
+        int count = likesRepository.countByPostId(postId);
+        Post postById = postService.getPostById(postId);
+        postById.setLikeCount(count);
     }
 
     @Override
@@ -68,9 +48,27 @@ public class LikesServiceImpl implements LikeService {
         return userService.getCurrentUserIdifExists()
                 .map(userId -> likesRepository.existsByPostIdAndUserId(postId, userId))
                 .orElse(false);
+    }
 
+    @Override
+    @Transactional
+    public void toggleLikeRecord(Long postId) {
+        User user = userService.getCurrentUser();
+        Optional<Likes> likes = likesRepository.findByPostIdAndUserId(postId, user.getId());
+        if (likes.isPresent()) {
+            likesRepository.delete(likes.get());
+        } else {
+            Likes entity = Likes.toEntity(user,postService.getPostById(postId));
+            likesRepository.save(entity);
+        }
+    }
 
-
+    @Override
+    @Transactional
+    public void updateLikeCount(Long postId) {
+        int count = likesRepository.countByPostId(postId);
+        Post postById = postService.getPostById(postId);
+        postById.setLikeCount(count);
     }
 
 

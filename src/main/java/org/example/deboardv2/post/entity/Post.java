@@ -3,6 +3,7 @@ package org.example.deboardv2.post.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.example.deboardv2.comment.entity.Comments;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostUpdateDto;
@@ -27,6 +28,7 @@ public class Post extends BaseEntity {
 //    @JoinColumn(name = "likes_id")
 //    private Likes likes;
 
+    @Setter
     @Column(name = "like_count",nullable = false)
     private int likeCount = 0;
 
