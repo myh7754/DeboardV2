@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.entity.QPost;
+import org.example.deboardv2.user.entity.QExternalAuthor;
 import org.example.deboardv2.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,6 +26,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     private final JPAQueryFactory queryFactory;
     QPost qPost = QPost.post;
     QUser qUser = QUser.user;
+    QExternalAuthor qExternalAuthor = QExternalAuthor.externalAuthor;
 
     @Override
     public Page<PostDetails> findAll(Pageable pageable) {
@@ -36,12 +38,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qUser.nickname,
+                        // nickname은 user든 externalAuthor든 둘 중 하나를 선택
+                        qUser.nickname.coalesce(qExternalAuthor.name).as("nickname"),
                         qPost.createdAt,
                         qPost.likeCount
                 ))
                 .from(qPost)
-                .join(qPost.author, qUser)
+                .leftJoin(qPost.author, qUser) // 기존: inner join
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(qPost.createdAt.desc())
@@ -65,17 +69,19 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     @Override
     @Transactional(readOnly = true)
     public PostDetails getPostDetails(Long postId) {
-        return queryFactory.
-                select(Projections.constructor(PostDetails.class,
+        return queryFactory
+                .select(Projections.fields(
+                        PostDetails.class,
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qUser.nickname,
+                        qUser.nickname.coalesce(qExternalAuthor.name).as("nickname"),
                         qPost.createdAt,
                         qPost.likeCount
                 ))
                 .from(qPost)
-                .join(qPost.author, qUser)
+                .leftJoin(qPost.author, qUser)
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
                 .where(qPost.id.eq(postId))
                 .fetchOne();
     }

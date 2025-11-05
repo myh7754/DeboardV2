@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.post.dto.RssPost;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostRepository;
@@ -22,6 +23,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,6 +32,7 @@ public class PostServiceImpl implements PostService {
     public final UserService userService;
     public final PostRepository postRepository;
     public final PostCustomRepository  postCustomRepository;
+    public final RssService rssService;
 
     @Override
     @Transactional
@@ -91,4 +95,6 @@ public class PostServiceImpl implements PostService {
 //        Post postReferenceById = getPostReferenceById(postId);
 //        postReferenceById.update(dto);
     }
+
+
 }

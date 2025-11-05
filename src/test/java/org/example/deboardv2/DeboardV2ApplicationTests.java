@@ -10,6 +10,7 @@ import org.example.deboardv2.user.dto.MemberDetails;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.example.deboardv2.user.service.UserService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,39 +18,49 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 
+
 @SpringBootTest
-@Transactional
 @Slf4j
 public class DeboardV2ApplicationTests {
     @Autowired
     private LikeService likeService;
+
     @Autowired
     private LikesRepository likesRepository;
+
     @Autowired
     private PostRepository postRepository;
+
     @Autowired
     private UserRepository userRepository;
-    @MockitoBean
-    private UserService userService; // 실제 JWT 인증 우회
 
     private Post post;
-    private static final int THREAD_COUNT = 50;
+    private List<User> testUsers;
+    private static final int THREAD_COUNT = 100;
 
     @BeforeEach
     void setup() {
-        // 테스트용 유저 50명 생성
+        // 기존 데이터 정리 (중요!)
+        likesRepository.deleteAll();
+
+        testUsers = new ArrayList<>();
+
+        // 테스트용 유저 100명 생성 및 저장
         for (int i = 1; i <= THREAD_COUNT; i++) {
             MemberDetails details = MemberDetails.builder()
-                    .name("userA" + i)
-                    .email("userA" + i + "@test.com")
+                    .name("userooff" + i)
+                    .email("userooff" + i + "@test.com")
                     .provider("GOOGLE")
                     .attributes(null)
                     .build();
@@ -58,48 +69,52 @@ public class DeboardV2ApplicationTests {
                     .memberDetails(details)
                     .build();
 
-            userRepository.save(user);
+            testUsers.add(userRepository.save(user));
         }
 
         // 테스트용 게시글
-        User author = userRepository.findById(1L).orElseThrow();
         post = new Post();
-        post.test(); // id = 1000L 등 임의 설정
-        postRepository.save(post);
+        post.test();
+        post = postRepository.save(post);
+
+        log.info("===== 테스트 준비 완료 =====");
+        log.info("생성된 Post ID: {}", post.getId());
+        log.info("생성된 User 수: {}", testUsers.size());
     }
 
     @Test
-    public void concurrentLikesDifferentUsersTest() throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    void 좋아요_동시성_문제_테스트() throws InterruptedException {
+        int threadCount = THREAD_COUNT;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
-
-        for (int i = 1; i <= THREAD_COUNT; i++) {
-            final long userId = i;
-            executor.submit(() -> {
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            int userIndex = i;
+            executorService.submit(() -> {
                 try {
-                    // 각 스레드마다 다른 사용자
-                    User user = userRepository.findById(userId).orElseThrow();
-
-                    given(userService.getCurrentUser()).willReturn(user);
-                    // 실제 LikeService 호출 시 현재 유저로 토글
-                    likeService.toggleLike(post.getId());
-
+                    User user =  testUsers.get(userIndex);
+                    boolean likesStatus = likeService.toggleLikeRecord(post.getId(), user);
+                    likeService.updateLikeCount(post.getId(), likesStatus);
+                } catch (Exception e) {
+                    log.error(e.getMessage());
                 } finally {
                     latch.countDown();
                 }
             });
         }
+        latch.await(); // 모든 스레드 종료 대기
+        executorService.shutdown();
 
-        latch.await();
+        // === 결과 검증 ===
+        Post result = postRepository.findById(post.getId()).orElseThrow();
+        long likesCount = likesRepository.countByPostId(post.getId());
 
-        long likeCount = likesRepository.countByPostId(post.getId());
-        Post updatedPost = postRepository.findById(post.getId()).orElseThrow();
+        log.info("최종 likeCount = {}", result.getLikeCount());
+        log.info("Likes 테이블 count = {}", likesCount);
 
-        System.out.println("Likes 테이블 개수 = " + likeCount);
-        System.out.println("Post.likeCount = " + updatedPost.getLikeCount());
+        // 둘이 일치해야 함
+        Assertions.assertEquals(likesCount, result.getLikeCount(),
+                String.format("likeCount 불일치! post=%d, likesTable=%d", result.getLikeCount(), likesCount));
     }
-
-
 }
 
 

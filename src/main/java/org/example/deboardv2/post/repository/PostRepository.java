@@ -1,5 +1,6 @@
 package org.example.deboardv2.post.repository;
 
+import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
@@ -26,4 +27,13 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             "WHERE p.id = :postId AND p.author.id = :authorId")
     int updateByIdAndAuthorId(Long postId, String title, String content, Long authorId);
     Boolean existsByIdAndAuthorId(Long postId, Long authorId);
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Post p SET p.likeCount = p.likeCount + 1 WHERE p.id = :postId")
+    void increaseLikeCount(@Param("postId") Long postId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Post p SET p.likeCount = p.likeCount - 1 WHERE p.id = :postId AND p.likeCount > 0")
+    void decreaseLikeCount(@Param("postId") Long postId);
+
+    boolean existsByLink(String link);
 }

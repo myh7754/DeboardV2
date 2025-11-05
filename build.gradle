@@ -65,6 +65,9 @@ dependencies {
     // 에러로그 트레이싱 샘플링을 위한 Cache 설정
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    //rss 파싱 라이브러리
+    implementation 'com.rometools:rome:1.18.0'
 }
 
 tasks.named('test') {

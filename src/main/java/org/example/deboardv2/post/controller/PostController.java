@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.post.service.Impl.RssService;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
     private final PostService postService;
     private final SearchService searchService;
+    private final RssService rssService;
 
     @Operation(summary = "게시글 목록 조회", description = "검색된 혹은 모든 게시글을 조회합니다.")
     @GetMapping("/posts")
@@ -42,7 +44,9 @@ public class PostController {
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 게시글을 조회합니다.")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<?> getPosts(@PathVariable Long postId) {
-        return ResponseEntity.ok(postService.getPostDtoById(postId));
+        PostDetails postDtoById = postService.getPostDtoById(postId);
+        log.debug("postDtoById:{}", postDtoById);
+        return ResponseEntity.ok(postDtoById);
     }
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 작성합니다.")
@@ -63,6 +67,13 @@ public class PostController {
     public ResponseEntity<?> deletePost(@PathVariable Long postId) {
         postService.delete(postId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "rss로 게시글 불러오기", description = "외부 사이트의 글을 불러옵니다.")
+    @GetMapping("/fetch")
+    public String fetchRss() throws Exception {
+        rssService.fetchRssFeed("https://myh7754.tistory.com/rss");
+        return "Fetched!";
     }
 
 }
