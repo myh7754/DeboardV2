@@ -1,4 +1,4 @@
-package org.example.deboardv2.post.dto;
+package org.example.deboardv2.rss.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

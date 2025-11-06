@@ -1,4 +1,4 @@
-package org.example.deboardv2.post.service.Impl;
+package org.example.deboardv2.rss.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +12,11 @@ public class RssScheduler {
     private final RssService rssService;
 
     private static final String[] RSS_FEEDS = {
-            "https://myh7754.tistory.com/rss"
+            "https://myh7754.tistory.com/rss", // 내 개인 개발 블로그
+            "https://tech.kakao.com/feed/", // 카카오 개발블로그
+            "https://medium.com/feed/daangn", // 당근 기술 블로그
+            "https://toss.tech/rss.xml", //토스 기술 블로그
+
     };
 
     @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
