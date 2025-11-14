@@ -2,7 +2,9 @@ package org.example.deboardv2.user.controller;
 
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.user.config.JwtConfig;
@@ -12,6 +14,7 @@ import org.example.deboardv2.user.service.JwtTokenProvider;
 import org.example.deboardv2.user.service.UserService;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -72,8 +75,18 @@ public class AuthController {
     @PostMapping("/refresh/logout")
     public ResponseEntity<?> logout(@CookieValue(name = "refreshToken", required = false) String refreshToken,
                                     @CookieValue(name = "accessToken",  required = false) String accessToken,
+                                    HttpServletRequest request,
                                     HttpServletResponse response) {
         authService.logout(refreshToken);
+
+        // SecurityContext 초기화
+        SecurityContextHolder.clearContext();
+
+        // 세션 무효화 (혹시나 LiveSession 남아있으면 제거)
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
         // 쿠키 초기화
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken","")
                 .maxAge(0)
