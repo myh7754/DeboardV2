@@ -137,31 +137,51 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     public Page<PostDetails> searchPost(Pageable pageable, String searchType, String keyword) {
-        BooleanExpression condition = buildCondition(searchType, keyword);
+        Long currentUserId = getCurrentUserId();
+        BooleanExpression baseCondition =
+                qPost.feed.isNotNull() // 공통 피드
+                        .or(qPost.author.isNotNull()); // 직접 작성글
 
-        List<PostDetails> results = queryFactory.
-                select(Projections.fields(
+        // 만약 현재 로그인된 사용자가 있다면 해당 사용자는 등록한 rss글까지 불러옴
+        if (currentUserId != null) {
+            baseCondition = baseCondition.or(qUserFeed.user.id.eq(currentUserId));
+        }
+
+        // 2. 검색 조건
+        BooleanExpression searchCondition = buildCondition(searchType, keyword);
+
+        // 3. 최종 조건: baseCondition AND searchCondition
+        BooleanExpression finalCondition = baseCondition.and(searchCondition);
+        List<PostDetails> results = queryFactory
+                .select(Projections.fields(
                         PostDetails.class,
                         qPost.id,
                         qPost.title,
                         qPost.content,
-                        qPost.author.nickname.as("nickname"),
-                        qPost.createdAt
+                        qUser.nickname.coalesce(qExternalAuthor.name).as("nickname"),
+                        qPost.createdAt,
+                        qPost.likeCount
                 ))
                 .from(qPost)
-                .join(qPost.author, qUser)
-                .where(condition)
+                .leftJoin(qPost.author, qUser)
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                .leftJoin(qPost.userFeed, qUserFeed)
+                .where(finalCondition)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(qPost.createdAt.desc())
                 .fetch();
 
-        Long total = queryFactory
-                .select(qPost.count())
-                .from(qPost)
-                .join(qPost.author, qUser)
-                .where(condition)
-                .fetchOne();
+        Long total = Optional.ofNullable(
+                queryFactory
+                        .select(Wildcard.count)
+                        .from(qPost)
+                        .leftJoin(qPost.author, qUser)
+                        .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                        .leftJoin(qPost.userFeed, qUserFeed)
+                        .where(finalCondition)
+                        .fetchOne()
+        ).orElse(0L);
 
         return new PageImpl<>(results, pageable, total);
     }
