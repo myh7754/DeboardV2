@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.UserFeed;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
@@ -22,7 +24,7 @@ public class Post extends BaseEntity {
     private String title;
     @Column(columnDefinition = "TEXT")
     private String content;
-
+    // 이미지 추가
     private String image;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,8 +37,13 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "external_author_id")
     ExternalAuthor externalAuthor;
 
-    @Column(unique = true)
-    private String link;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Feed feed;        // 공용일 경우
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private UserFeed userFeed; // 개인일 경우
+
+    private String link; // 게시글 원본 링크
 
     @Setter
     @Column(name = "like_count", nullable = false)
@@ -50,14 +57,17 @@ public class Post extends BaseEntity {
         return post;
     }
 
-    public static Post fromRss(String title, String content, String link,
-                               LocalDateTime createdAt, ExternalAuthor externalAuthor) {
+    public static Post fromRss(String title, String content,String image, String link,
+                               LocalDateTime createdAt, ExternalAuthor externalAuthor,Feed feed, UserFeed userFeed) {
         Post post = new Post();
         post.title = title;
         post.content = content;
+        post.image = image;
         post.link = link;
         post.externalAuthor = externalAuthor;
         post.setCreatedAt(createdAt); // BaseEntity에 createdAt 필드 있을 경우 보호된 setter 사용
+        post.feed = feed;
+        post.userFeed = userFeed;
         return post;
     }
 

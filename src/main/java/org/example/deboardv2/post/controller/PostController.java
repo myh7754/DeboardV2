@@ -69,11 +69,4 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "rss로 게시글 불러오기", description = "외부 사이트의 글을 불러옵니다.")
-    @GetMapping("/fetch")
-    public String fetchRss() throws Exception {
-        rssService.fetchRssFeed("https://myh7754.tistory.com/rss");
-        return "Fetched!";
-    }
-
 }

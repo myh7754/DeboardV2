@@ -8,11 +8,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.entity.QPost;
+import org.example.deboardv2.rss.domain.QUserFeed;
+import org.example.deboardv2.user.dto.TokenBody;
 import org.example.deboardv2.user.entity.QExternalAuthor;
 import org.example.deboardv2.user.entity.QUser;
+import org.example.deboardv2.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +32,29 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     QPost qPost = QPost.post;
     QUser qUser = QUser.user;
     QExternalAuthor qExternalAuthor = QExternalAuthor.externalAuthor;
+    QUserFeed qUserFeed = QUserFeed.userFeed;
+
+    public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Current User: {}", authentication.getPrincipal());
+        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+            return null; // 비로그인 사용자 처리
+        }
+        TokenBody tokenBody = (TokenBody) authentication.getPrincipal();
+        return tokenBody.getMemberId();
+    }
 
     @Override
     public Page<PostDetails> findAll(Pageable pageable) {
+        Long currentUserId = getCurrentUserId();
+        BooleanExpression baseCondition =
+                qPost.feed.isNotNull() // 공통 피드
+                        .or(qPost.author.isNotNull()); // 직접 작성글
+
+        // 만약 현재 로그인된 사용자가 있다면 해당 사용자는 등록한 rss글까지 불러옴
+        if (currentUserId != null) {
+            baseCondition = baseCondition.or(qUserFeed.user.id.eq(currentUserId));
+        }
 
         List<PostDetails> content = queryFactory
 //                Dto에 @QueryProjection 사용 안한경우
@@ -46,8 +71,10 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .from(qPost)
                 .leftJoin(qPost.author, qUser) // 기존: inner join
                 .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                .leftJoin(qPost.userFeed, qUserFeed)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .where(baseCondition)
                 .orderBy(qPost.createdAt.desc())
                 .fetch();
 
@@ -60,6 +87,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 queryFactory
                         .select(Wildcard.count)
                         .from(qPost)
+                        .leftJoin(qPost.userFeed, qUserFeed)
+                        .where(baseCondition)
                         .fetchOne()
         ).orElse(0L);
 

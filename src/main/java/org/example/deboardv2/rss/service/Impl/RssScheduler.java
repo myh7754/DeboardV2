@@ -2,8 +2,12 @@ package org.example.deboardv2.rss.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.UserFeed;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -22,13 +26,24 @@ public class RssScheduler {
     @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
 //    @Scheduled(fixedRate = 10000)
     public void fetchAllRssFeeds() throws Exception {
-        for (String feedUrl : RSS_FEEDS) {
+        List<Feed> feeds = rssService.getAllFeeds();
+        for (Feed feed : feeds) {
             try {
-                log.warn("fetch rss from {}", feedUrl);
-                rssService.fetchRssFeed(feedUrl);
+                rssService.fetchRssFeed(feed.getFeedURL(), feed);
             } catch (Exception e) {
                 log.error("fail to fetch rss");
             }
         }
+
+        List<UserFeed> allUserFeeds = rssService.getAllUserFeeds();
+        for (UserFeed userFeed : allUserFeeds) {
+            try {
+                rssService.fetchRssFeed(userFeed.getFeedUrl(), userFeed);
+            } catch (Exception e) {
+                log.error("fail to fetch userFeed");
+            }
+        }
     }
+
+
 }
