@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface FeedRepository extends JpaRepository<Feed,Long> {
 
-    List<Feed> findByFeedURL(String feedURL);
+    List<Feed> findByFeedUrl(String feedURL);
 }

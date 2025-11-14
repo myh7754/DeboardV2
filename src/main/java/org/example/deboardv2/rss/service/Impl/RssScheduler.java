@@ -29,7 +29,7 @@ public class RssScheduler {
         List<Feed> feeds = rssService.getAllFeeds();
         for (Feed feed : feeds) {
             try {
-                rssService.fetchRssFeed(feed.getFeedURL(), feed);
+                rssService.fetchRssFeed(feed.getFeedUrl(), feed);
             } catch (Exception e) {
                 log.error("fail to fetch rss");
             }

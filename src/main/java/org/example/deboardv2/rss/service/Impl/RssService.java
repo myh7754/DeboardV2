@@ -115,7 +115,7 @@ public class RssService {
 
         Feed feed = Feed.builder()
                 .siteName(name)
-                .feedURL(resolvedUrl)
+                .feedUrl(resolvedUrl)
                 .build();
         return feedRepository.save(feed);
     }
@@ -143,6 +143,11 @@ public class RssService {
         return userFeedRepository.save(userFeed);
     }
 
+    @Transactional
+    public void deleteFeed(Long id) {
+        feedRepository.deleteById(id);
+    }
+
     // 사용자 피드 목록
     @Transactional(readOnly = true)
     public List<UserFeed> getUserFeeds(User user) {
@@ -152,6 +157,11 @@ public class RssService {
     @Transactional(readOnly = true)
     public List<UserFeed> getAllUserFeeds() {
         return userFeedRepository.findAll();
+    }
+
+    @Transactional
+    public void deleteUserFeed(Long id) {
+        userFeedRepository.deleteById(id);
     }
 
 
