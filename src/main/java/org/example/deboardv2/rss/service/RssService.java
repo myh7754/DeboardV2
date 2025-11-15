@@ -1,4 +1,4 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.rss.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -13,19 +13,19 @@ import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.rss.domain.UserFeed;
 import org.example.deboardv2.rss.repository.FeedRepository;
 import org.example.deboardv2.rss.repository.UserFeedRepository;
-import org.example.deboardv2.rss.service.RssParserStrategy;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
 import org.example.deboardv2.user.service.UserService;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.input.SAXBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,8 +42,20 @@ public class RssService {
     // rss url에서 글을 읽어와 post entity로 저장
     @Transactional
     public void fetchRssFeed(String feedUrl, Feed rssFeed) throws Exception {
-        URL url = new URL(feedUrl);
+        URL url = new URL(rssFeed.getFeedUrl());
+        SAXBuilder saxBuilder = new SAXBuilder();
+        Document document = saxBuilder.build(url);
+        Element channel = document.getRootElement().getChild("channel");
+        List<Element> rawItems = channel.getChildren("item");
+        // RSS을 XML로 직접 파싱하여 MAP으로 변환
+        Map<String, Element> itemMap = rawItems.stream()
+                .collect(Collectors.toMap(
+                        item -> item.getChildText("link"),
+                        item -> item
+                ));
+
         SyndFeedInput input = new SyndFeedInput();
+        input.setPreserveWireFeed(true);
         SyndFeed feed = input.build(new XmlReader(url));
 
         List<SyndEntry> entries = feed.getEntries();
@@ -53,9 +65,9 @@ public class RssService {
                 .filter(p -> p.supports(feedUrl))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
-
         for (SyndEntry entry : entries) {
-            RssPost rssPost = parser.parse(entry, feedUrl);
+            Element element = itemMap.get(entry.getLink());
+            RssPost rssPost = parser.parse(entry, feedUrl, element);
             rssPost.setFeed(rssFeed);
             saveIfNew(rssPost, feedUrl);
         }

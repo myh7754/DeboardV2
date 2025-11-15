@@ -10,7 +10,7 @@ import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.post.service.PostService;
-import org.example.deboardv2.rss.service.Impl.RssService;
+import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.User;

@@ -6,11 +6,9 @@ import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
 import org.example.deboardv2.rss.dto.FeedDto;
 import org.example.deboardv2.rss.dto.UserFeedDto;
-import org.example.deboardv2.rss.service.Impl.RssService;
-import org.example.deboardv2.rss.service.Impl.TistoryRssParser;
+import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.rss.service.RssParserStrategy;
 import org.example.deboardv2.user.entity.User;
-import org.example.deboardv2.user.repository.UserRepository;
 import org.example.deboardv2.user.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +23,6 @@ import java.util.stream.Collectors;
 public class RssController {
     private final UserService userService;
     private final RssService rssService;
-    private final RssParserStrategy parserStrategy;
 
     @PostMapping("/feed")
     public ResponseEntity<?> registerFeed(@RequestParam String name, @RequestParam String url) throws Exception {

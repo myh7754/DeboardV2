@@ -1,4 +1,4 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.rss.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

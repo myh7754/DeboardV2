@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
-import org.example.deboardv2.rss.service.Impl.RssService;
+import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;

@@ -20,6 +20,7 @@ public class Feed { // 공통 블로그
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String siteName;
+    @Column(unique = true)
     private String feedUrl; // rss url
 
     @Builder.Default
