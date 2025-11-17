@@ -47,14 +47,22 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     @Override
     public Page<PostDetails> findAll(Pageable pageable) {
         Long currentUserId = getCurrentUserId();
-        BooleanExpression baseCondition =
-                qPost.feed.isNotNull() // 공통 피드
-                        .or(qPost.author.isNotNull()); // 직접 작성글
 
-        // 만약 현재 로그인된 사용자가 있다면 해당 사용자는 등록한 rss글까지 불러옴
-        if (currentUserId != null) {
-            baseCondition = baseCondition.or(qUserFeed.user.id.eq(currentUserId));
-        }
+        // 수정: 공용 게시글 조건 (사이트 글 + 외부 RSS)
+        BooleanExpression publicCondition =
+                qPost.feed.isNotNull()
+                        .or(qPost.author.isNotNull());
+
+        // 수정: 개인 피드 조건 (본인 글만)
+        BooleanExpression personalCondition =
+                currentUserId != null
+                        ? qPost.userFeed.user.id.eq(currentUserId)
+                        : null;
+
+        // 수정: 최종 where 조건
+        BooleanExpression finalCondition = (personalCondition == null)
+                ? publicCondition
+                : publicCondition.or(personalCondition);
 
         List<PostDetails> content = queryFactory
 //                Dto에 @QueryProjection 사용 안한경우
@@ -74,7 +82,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .leftJoin(qPost.userFeed, qUserFeed)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .where(baseCondition)
+                .where(finalCondition)
                 .orderBy(qPost.createdAt.desc())
                 .fetch();
 
@@ -88,7 +96,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                         .select(Wildcard.count)
                         .from(qPost)
                         .leftJoin(qPost.userFeed, qUserFeed)
-                        .where(baseCondition)
+                        .where(finalCondition)
                         .fetchOne()
         ).orElse(0L);
 
@@ -125,7 +133,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
             case "content":
                 return qPost.content.containsIgnoreCase(keyword);
             case "author":
-                return qUser.nickname.containsIgnoreCase(keyword);
+                return qUser.nickname.containsIgnoreCase(keyword)
+                        .or(qExternalAuthor.name.containsIgnoreCase(keyword));
             case "titleContent":
                 return qPost.title.containsIgnoreCase(keyword)
                         .or(qPost.content.containsIgnoreCase(keyword));
@@ -138,20 +147,30 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     @Override
     public Page<PostDetails> searchPost(Pageable pageable, String searchType, String keyword) {
         Long currentUserId = getCurrentUserId();
-        BooleanExpression baseCondition =
-                qPost.feed.isNotNull() // 공통 피드
-                        .or(qPost.author.isNotNull()); // 직접 작성글
+        // 수정: 공용 게시글 조건
+        BooleanExpression publicCondition =
+                qPost.feed.isNotNull()
+                        .or(qPost.author.isNotNull());
 
-        // 만약 현재 로그인된 사용자가 있다면 해당 사용자는 등록한 rss글까지 불러옴
-        if (currentUserId != null) {
-            baseCondition = baseCondition.or(qUserFeed.user.id.eq(currentUserId));
-        }
+        // 수정: 개인 피드 게시글
+        BooleanExpression personalCondition =
+                currentUserId != null
+                        ? qPost.userFeed.user.id.eq(currentUserId)
+                        : null;
 
-        // 2. 검색 조건
+        // 수정: baseCondition
+        BooleanExpression baseCondition = (personalCondition == null)
+                ? publicCondition
+                : publicCondition.or(personalCondition);
+
+        // 기존 검색 조건 유지
         BooleanExpression searchCondition = buildCondition(searchType, keyword);
 
-        // 3. 최종 조건: baseCondition AND searchCondition
-        BooleanExpression finalCondition = baseCondition.and(searchCondition);
+        // 수정: 검색 + 접근권한 결합
+        BooleanExpression finalCondition = (searchCondition == null)
+                ? baseCondition
+                : baseCondition.and(searchCondition);
+
         List<PostDetails> results = queryFactory
                 .select(Projections.fields(
                         PostDetails.class,

@@ -45,8 +45,8 @@ public class WoowahanRssParser implements RssParserStrategy {
     }
 
     private String getDescription(SyndEntry entry) {
-        if (entry.getDescription() != null) {
-            return entry.getDescription().getValue();
+        if (entry.getContents() != null && !entry.getContents().isEmpty()) {
+            return entry.getContents().get(0).getValue();
         }
         return "(내용 없음)";
     }
