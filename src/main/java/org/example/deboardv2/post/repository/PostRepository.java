@@ -4,6 +4,7 @@ import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
+import org.example.deboardv2.rss.domain.UserFeed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,4 +37,5 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     void decreaseLikeCount(@Param("postId") Long postId);
 
     boolean existsByLink(String link);
+    boolean existsByLinkAndUserFeed(String link, UserFeed userFeed);
 }

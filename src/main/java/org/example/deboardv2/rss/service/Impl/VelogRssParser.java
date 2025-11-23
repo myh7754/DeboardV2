@@ -24,6 +24,9 @@ public class VelogRssParser implements RssParserStrategy {
 
     @Override
     public String resolve(String url) {
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
         int atIndex = url.indexOf("@");
         if (atIndex == -1) return null;
 

@@ -23,6 +23,9 @@ public class KakaoRssParser implements RssParserStrategy {
 
     @Override
     public String resolve(String url) {
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
         if (url.endsWith("/")) { // url이 /로 끝나는지 확인
             url = url.substring(0,url.length()-1); // 만약 /로 끝난다면 마지막/를 잘라냄
         }

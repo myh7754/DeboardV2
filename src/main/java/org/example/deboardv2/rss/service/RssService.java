@@ -69,6 +69,10 @@ public class RssService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
         for (SyndEntry entry : entries) {
+            if (postRepository.existsByLink(entry.getLink())) {
+                log.error("feed 여기가 안 나오면 안되는데?");
+                continue ;
+            }
             Element element = itemMap.get(entry.getLink());
             RssPost rssPost = parser.parse(entry, feedUrl, element);
             rssPost.setFeed(rssFeed);
@@ -91,6 +95,10 @@ public class RssService {
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
 
         for (SyndEntry entry : entries) {
+            if (postRepository.existsByLinkAndUserFeed(entry.getLink(), userFeed)) {
+                log.error("Userfeed 여기가 안 나오면 안되는데?");
+                return ;
+            }
             RssPost rssPost = parser.parse(entry, feedUrl);
             rssPost.setUserFeed(userFeed);
             saveIfNew(rssPost, feedUrl);
