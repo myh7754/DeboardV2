@@ -24,7 +24,7 @@ public class RssScheduler {
     };
 
     @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
-    @Scheduled(cron = "0 0/10 * * * *") // 10분마다 실행
+//    @Scheduled(cron = "0 0/10 * * * *") // 10분마다 실행
 //    @Scheduled(fixedRate = 10000)
     public void fetchAllRssFeeds() throws Exception {
         List<Feed> feeds = rssService.getAllFeeds();
@@ -32,7 +32,7 @@ public class RssScheduler {
             try {
                 rssService.fetchRssFeed(feed.getFeedUrl(), feed);
             } catch (Exception e) {
-                log.error("fail to fetch rss");
+                log.error("fail to fetch rss",e);
             }
         }
 
@@ -41,7 +41,7 @@ public class RssScheduler {
             try {
                 rssService.fetchRssFeed(userFeed.getFeedUrl(), userFeed);
             } catch (Exception e) {
-                log.error("fail to fetch userFeed");
+                log.error("fail to fetch userFeed",e);
             }
         }
     }

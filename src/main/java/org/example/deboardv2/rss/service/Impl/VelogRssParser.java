@@ -6,6 +6,8 @@ import org.example.deboardv2.rss.domain.RssPost;
 import org.example.deboardv2.rss.service.RssParserStrategy;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -39,15 +41,32 @@ public class VelogRssParser implements RssParserStrategy {
 
     @Override
     public RssPost parse(SyndEntry entry, String feedUrl) {
-        log.info("link {}", entry.getLink());
-        log.info("feedUrl {}", feedUrl);
         return RssPost.builder()
                 .title(entry.getTitle())
                 .link(entry.getLink())
-                .author(entry.getAuthor())
+                .author(extractVelogAuthor(feedUrl))
                 .content(getDescription(entry))
                 .publishedAt(convertToLocalDateTime(entry.getPublishedDate()))
                 .build();
+    }
+    private String extractVelogAuthor(String link) {
+        try {
+            URI uri = new URI(link);
+            String path = uri.getPath();  // 예: /rss/academey
+            if (path == null) {
+                return "velog@unknown";
+            }
+
+            String[] segments = path.split("/");
+            String last = segments[segments.length - 1];
+
+            if (last != null && !last.isBlank()) {
+                return "velog@" + last;
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return "velog@unknown";
     }
 
     private String getDescription(SyndEntry entry) {
