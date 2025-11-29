@@ -12,6 +12,7 @@ public interface PostService {
     public Post getPostReferenceById(Long postId);
     public PostDetails getPostDtoById(Long postId);
     public Page<PostDetails> readAll(int size, int page);
+    public Page<PostDetails> readLikesPosts(int size, int page);
     public void delete(Long post);
     public void update(PostUpdateDto post, Long postId);
 }

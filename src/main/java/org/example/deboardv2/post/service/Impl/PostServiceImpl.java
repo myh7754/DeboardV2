@@ -66,6 +66,12 @@ public class PostServiceImpl implements PostService {
         return postCustomRepository.findAll(pageable);
     }
 
+    @Override
+    public Page<PostDetails> readLikesPosts(int size, int page) {
+        Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
+        return postCustomRepository.findLikesPosts(pageable);
+    }
+
 
     @Override
     @Transactional
@@ -92,6 +98,8 @@ public class PostServiceImpl implements PostService {
 //        Post postReferenceById = getPostReferenceById(postId);
 //        postReferenceById.update(dto);
     }
+
+
 
 
 }

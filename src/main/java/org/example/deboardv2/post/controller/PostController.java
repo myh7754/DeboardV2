@@ -69,4 +69,12 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "좋아요한 게시글 목록", description = "로그인된 사용자의 게시글을 가져옵니다")
+    @GetMapping("/posts/liked")
+    public ResponseEntity<?> getLikedPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(postService.readAll(page, size));
+    }
 }
