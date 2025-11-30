@@ -30,7 +30,11 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.BAD_REQUEST, "게시글을 찾을 수 없습니다"),
 
     //comment
-    COMMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 댓글을 찾을 수 없습니다");
+    COMMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 댓글을 찾을 수 없습니다"),
+
+    //
+    DUPLICATED_FEED(HttpStatus.BAD_REQUEST, "중복된 피드 입니다."),
+    DUPLICATED_USER_FEED(HttpStatus.BAD_REQUEST, "중복된 유저 피드 입니다");
 
     private final HttpStatus status;
     private final String message;

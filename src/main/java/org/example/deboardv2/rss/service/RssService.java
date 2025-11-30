@@ -14,6 +14,8 @@ import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.rss.domain.UserFeed;
 import org.example.deboardv2.rss.repository.FeedRepository;
 import org.example.deboardv2.rss.repository.UserFeedRepository;
+import org.example.deboardv2.system.exception.CustomException;
+import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
@@ -134,11 +136,15 @@ public class RssService {
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다."));
         String resolvedUrl = parser.resolve(rssUrl);
 
-        Feed feed = Feed.builder()
-                .siteName(name)
-                .feedUrl(resolvedUrl)
-                .build();
-        return feedRepository.save(feed);
+        if (feedRepository.existsByFeedUrl(resolvedUrl)) {
+            throw new CustomException(ErrorCode.DUPLICATED_FEED);
+        } else {
+            Feed feed = Feed.builder()
+                    .siteName(name)
+                    .feedUrl(resolvedUrl)
+                    .build();
+            return feedRepository.save(feed);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -156,12 +162,16 @@ public class RssService {
 
         String resolvedUrl = parser.resolve(rssUrl);
 
-        UserFeed userFeed = UserFeed.builder()
-                .user(user)
-                .siteName(blogName)
-                .feedUrl(resolvedUrl)
-                .build();
-        return userFeedRepository.save(userFeed);
+        if (userFeedRepository.existsByUserAndFeedUrl(user, resolvedUrl)) {
+            throw new CustomException(ErrorCode.DUPLICATED_USER_FEED);
+        } else {
+            UserFeed userFeed = UserFeed.builder()
+                    .user(user)
+                    .siteName(blogName)
+                    .feedUrl(resolvedUrl)
+                    .build();
+            return userFeedRepository.save(userFeed);
+        }
     }
 
     @Transactional

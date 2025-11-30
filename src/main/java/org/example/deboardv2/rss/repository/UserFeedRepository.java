@@ -12,4 +12,5 @@ public interface UserFeedRepository extends JpaRepository<UserFeed,Long> {
     Optional<UserFeed> findByFeedUrl(String feedUrl);
 
     List<UserFeed> findAllByUser(User user);
+    boolean existsByUserAndFeedUrl(User user, String feedUrl);
 }

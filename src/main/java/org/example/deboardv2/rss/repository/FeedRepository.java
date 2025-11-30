@@ -8,4 +8,5 @@ import java.util.List;
 public interface FeedRepository extends JpaRepository<Feed,Long> {
 
     List<Feed> findByFeedUrl(String feedURL);
+    boolean existsByFeedUrl(String feedURL);
 }
