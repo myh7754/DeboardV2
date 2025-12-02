@@ -72,9 +72,18 @@ public class PostController {
     @Operation(summary = "좋아요한 게시글 목록", description = "로그인된 사용자의 게시글을 가져옵니다")
     @GetMapping("/posts/liked")
     public ResponseEntity<?> getLikedPosts(
+            @RequestParam(defaultValue = "title", required = false) String searchType,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
-        return ResponseEntity.ok(postService.readAll(page, size));
+        Page<PostDetails> postDtos;
+        if (keyword == null || keyword.isBlank()) {
+            postDtos = postService.readLikesPosts(size, page);
+        } else {
+            postDtos = searchService.seardhLikePosts(searchType, keyword, page, size);
+        }
+        return ResponseEntity.ok(postDtos);
     }
 }

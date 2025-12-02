@@ -9,4 +9,5 @@ public interface PostCustomRepository {
     PostDetails getPostDetails(Long postId);
     Page<PostDetails> searchPost(Pageable pageable, String searchType,String keyword);
     Page<PostDetails> findLikesPosts(Pageable pageable);
+    Page<PostDetails> searchLikePosts( Pageable pageable, String searchType, String keyword);
 }

@@ -246,5 +246,72 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         return new PageImpl<>(content, pageable, total);
     }
 
+    @Override
+    public Page<PostDetails> searchLikePosts(Pageable pageable, String searchType, String keyword) {
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            return Page.empty();
+        }
+        // 좋아요 기본 조건
+        BooleanExpression likeCondition = qLikes.user.id.eq(currentUserId);
+
+        // 공용 게시글 조건
+        BooleanExpression publicCondition =
+                qPost.feed.isNotNull()
+                        .or(qPost.author.isNotNull());
+
+        // 개인 피드 게시글
+        BooleanExpression personalCondition =
+                currentUserId != null
+                        ? qPost.userFeed.user.id.eq(currentUserId)
+                        : null;
+
+        // baseCondition
+        BooleanExpression baseCondition = (personalCondition == null)
+                ? publicCondition
+                : publicCondition.or(personalCondition);
+
+        // 기존 검색 조건 유지
+        BooleanExpression searchCondition = buildCondition(searchType, keyword);
+
+        // 최종 where 조건 결합
+        BooleanExpression finalCondition = likeCondition
+                .and(baseCondition)
+                .and(searchCondition != null ? searchCondition : null);
+
+        List<PostDetails> content = queryFactory
+                .select(Projections.fields(
+                        PostDetails.class,
+                        qPost.id,
+                        qPost.title,
+                        qPost.content,
+                        qUser.nickname.coalesce(qExternalAuthor.name).as("nickname"),
+                        qPost.createdAt,
+                        qPost.likeCount
+                ))
+                .from(qLikes)
+                .join(qLikes.post, qPost)
+                .leftJoin(qPost.author , qUser)
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                .leftJoin(qPost.userFeed, qUserFeed)
+                .where(finalCondition)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(qPost.createdAt.desc())
+                .fetch();
+
+        Long total = Optional.ofNullable(
+                queryFactory
+                        .select(Wildcard.count)
+                        .from(qLikes)
+                        .join(qLikes.post, qPost)
+                        .leftJoin(qPost.userFeed, qUserFeed)
+                        .where(finalCondition)
+                        .fetchOne()
+        ).orElse(0L);
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
 
 }

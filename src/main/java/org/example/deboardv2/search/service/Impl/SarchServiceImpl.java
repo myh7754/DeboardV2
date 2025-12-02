@@ -20,4 +20,12 @@ public class SarchServiceImpl implements SearchService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return postCustomRepository.searchPost(pageable, searchType, search);
     }
+
+    @Override
+    public Page<PostDetails> seardhLikePosts(String searchType, String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postCustomRepository.searchLikePosts(pageable, searchType, search);
+    }
+
+
 }
