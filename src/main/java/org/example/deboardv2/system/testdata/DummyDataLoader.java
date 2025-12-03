@@ -36,61 +36,6 @@ public class DummyDataLoader implements CommandLineRunner {
     private final CommentsRepository commentsRepository;
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
-
-//    @Override
-//    @Transactional // Batch Insert 시에는 트랜잭션 단위로 묶는게 중요
-//    public void run(String... args) throws Exception {
-//        int total = 100_000;
-//        int batchSize = 1000;
-//        log.info("더미 데이터 100만 건 삽입 시작...");
-//
-//        // user
-//        for (int i = 1; i <= total; i++) {
-//            SignupRequest signupRequest = new SignupRequest();
-//            signupRequest.setNickname("user" + i);
-//            signupRequest.setEmail("user" + i + "@gmail.com");
-//            signupRequest.setPassword(passwordEncoder.encode("password" + i));
-//
-//            User user = User.toEntity(signupRequest);
-//
-//            entityManager.persist(user); // saveAll 대신 persist 사용
-//
-//            // Batch 단위마다 flush + clear
-//            if (i % batchSize == 0) {
-//                entityManager.flush();
-//                entityManager.clear();
-//                log.info("{} users inserted...", i);
-//            }
-//        }
-//
-//        // 남은 데이터 flush
-//        entityManager.flush();
-//        entityManager.clear();
-//        log.info("user 데이터 삽입 완료!");
-//
-//        // post
-//        for (int i = 1; i <= total; i++) {
-//            User user = entityManager.getReference(User.class, (Long) 1L);
-//            PostCreateDto postCreateDto = new PostCreateDto();
-//            postCreateDto.setContent("content" + i);
-//            postCreateDto.setTitle("title" + i);
-//            Post post = Post.from(postCreateDto, user);
-//            entityManager.persist(post);
-//
-//            if (i % batchSize == 0) {
-//                entityManager.flush();
-//                entityManager.clear();
-//                log.info("{} posts inserted...", i);
-//            }
-//        }
-//
-//        // 남은 데이터 flush
-//        entityManager.flush();
-//        entityManager.clear();
-//        log.info("post 데이터 삽입 완료!");
-////
-//    }
-
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -162,6 +107,35 @@ public class DummyDataLoader implements CommandLineRunner {
 //        }
 //
 //        log.info("post 데이터 삽입 완료!");
+
+        // EC2 배포용 시작 더미데이터 50명 추가 db에 데이터가 없다면 실행
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user", Integer.class);
+        if (count != null && count > 0) {
+            log.info("이미 user 데이터가 존재합니다 ({}명). 더미 데이터 삽입 건너뜀.", count);
+            return;
+        }
+
+        int totalUsers = 50; // 삽입할 유저 수
+        log.info("더미 데이터 {}건 삽입 시작...", totalUsers);
+
+        String password123 = passwordEncoder.encode("password123");
+        List<Object[]> userBatch = new ArrayList<>();
+        for (int i = 1; i <= totalUsers; i++) {
+            userBatch.add(new Object[]{
+                    "user" + i + "@gmail.com", // email
+                    "user" + i,                // nickname
+                    password123,               // password (BCrypt 인코딩)
+                    null,                      // provider
+                    "ROLE_MEMBER"              // role
+            });
+        }
+
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO user (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
+                userBatch
+        );
+
+        log.info("user {}명 데이터 삽입 완료!", totalUsers);
     }
 
 }

@@ -23,26 +23,6 @@ public class LikesServiceImpl implements LikeService {
     private final PostRepository postRepository;
 
     @Override
-    @Transactional
-    public void toggleLike(Long postId) {
-        User user = userService.getCurrentUser();
-
-        // 2. Likes 조회/수정
-        Optional<Likes> likes = likesRepository.findByPostIdAndUserId(postId, user.getId()); // select like where post and userId
-        if (likes.isPresent()) {
-            likesRepository.delete(likes.get()); // delete like
-        } else {
-            Likes entity = Likes.toEntity(user, postService.getPostById(postId));
-            likesRepository.save(entity); // insert like (user, post)
-        }
-        int count = likesRepository.countByPostId(postId); // select count(postId) like
-        Post post = postService.getPostById(postId); //select post
-
-        // 3. 같은 post 객체 재사용
-        post.setLikeCount(count); // update set post likecount
-    }
-
-    @Override
     public int getLikeCount(Long postId) {
         return postService.getPostById(postId).getLikeCount();
     }
@@ -56,8 +36,8 @@ public class LikesServiceImpl implements LikeService {
 
     @Override
     @Transactional
-    public Boolean toggleLikeRecord(Long postId, User user) {
-//        User user = userService.getCurrentUser();
+    public Boolean toggleLikeRecord(Long postId) {
+        User user = userService.getCurrentUser();
         Optional<Likes> likes = likesRepository.findByPostIdAndUserId(postId, user.getId());
         if (likes.isPresent()) {
             likesRepository.delete(likes.get());
