@@ -4,6 +4,7 @@ import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
+import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
+import java.util.Set;
 
 
 public interface PostRepository extends JpaRepository<Post,Long> {
@@ -36,6 +38,11 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     @Query("UPDATE Post p SET p.likeCount = p.likeCount - 1 WHERE p.id = :postId AND p.likeCount > 0")
     void decreaseLikeCount(@Param("postId") Long postId);
 
-    boolean existsByLink(String link);
-    boolean existsByLinkAndUserFeed(String link, UserFeed userFeed);
+
+    @Query("SELECT p.link FROM Post p WHERE p.feed = :feed AND p.link IN :links")
+    Set<String> findExistingLinksByFeed(@Param("feed") Feed feed, @Param("links") Set<String> links);
+    @Query("SELECT p.link FROM Post p WHERE p.userFeed = :userFeed AND p.link IN :links")
+    Set<String> findExistingLinksByUserFeed(@Param("userFeed") UserFeed userFeed, @Param("links") Set<String> links);
+
+
 }

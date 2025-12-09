@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,7 +46,6 @@ public class RssService {
     private final UserService userService;
 
     // rss url에서 글을 읽어와 post entity로 저장
-    @Transactional
     public void fetchRssFeed(String feedUrl, Feed rssFeed) throws Exception {
         URL url = new URL(rssFeed.getFeedUrl());
         SAXBuilder saxBuilder = new SAXBuilder();
@@ -70,10 +70,18 @@ public class RssService {
                 .filter(p -> p.supports(feedUrl))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
+        Set<String> entryLinks = entries.stream()
+                .map(SyndEntry::getLink)
+                .collect(Collectors.toSet());
+
+        Set<String> existingLinks = postRepository.findExistingLinksByFeed(rssFeed, entryLinks);
         for (SyndEntry entry : entries) {
-            if (postRepository.existsByLink(entry.getLink())) {
-                continue ;
+            if (existingLinks.contains(entry.getLink())) {
+                continue;
             }
+//            if (postRepository.existsByLink(entry.getLink())) {
+//                continue ;
+//            }
             Element element = itemMap.get(entry.getLink());
             RssPost rssPost = parser.parse(entry, feedUrl, element);
             rssPost.setFeed(rssFeed);
@@ -81,7 +89,6 @@ public class RssService {
         }
     }
 
-    @Transactional
     public void fetchRssFeed(String feedUrl, UserFeed userFeed) throws Exception {
         URL url = new URL(feedUrl);
         SyndFeedInput input = new SyndFeedInput();
@@ -95,9 +102,14 @@ public class RssService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
 
+        Set<String> entryLinks = entries.stream()
+                .map(SyndEntry::getLink)
+                .collect(Collectors.toSet());
+        Set<String> existingLinksByUserFeed = postRepository.findExistingLinksByUserFeed(userFeed, entryLinks);
+
         for (SyndEntry entry : entries) {
-            if (postRepository.existsByLinkAndUserFeed(entry.getLink(), userFeed)) {
-                return ;
+            if (existingLinksByUserFeed.contains(entry.getLink())) {
+                continue;
             }
             RssPost rssPost = parser.parse(entry, feedUrl);
             rssPost.setUserFeed(userFeed);
