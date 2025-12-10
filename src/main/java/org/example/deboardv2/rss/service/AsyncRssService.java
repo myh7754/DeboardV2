@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
@@ -14,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 public class AsyncRssService {
     private final RssService rssService;
 
+    @Async("rssTaskExecutor")
     public CompletableFuture<Void> processFeed(Feed feed) {
         try {
             rssService.fetchRssFeed(feed.getFeedUrl(),feed);
@@ -23,6 +25,7 @@ public class AsyncRssService {
         return CompletableFuture.completedFuture(null);
     }
 
+    @Async("rssTaskExecutor")
     public CompletableFuture<Void> processUserFeed(UserFeed userFeed) {
         try {
             rssService.fetchRssFeed(userFeed.getFeedUrl(), userFeed);
