@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,13 +46,13 @@ public class RssService {
     private final UserService userService;
 
     // rss url에서 글을 읽어와 post entity로 저장
-    @Transactional
     public void fetchRssFeed(String feedUrl, Feed rssFeed) throws Exception {
         URL url = new URL(rssFeed.getFeedUrl());
         SAXBuilder saxBuilder = new SAXBuilder();
         Document document = saxBuilder.build(url);
         Element channel = document.getRootElement().getChild("channel");
         List<Element> rawItems = channel.getChildren("item");
+
         // RSS을 XML로 직접 파싱하여 MAP으로 변환
         Map<String, Element> itemMap = rawItems.stream()
                 .collect(Collectors.toMap(
@@ -62,7 +63,6 @@ public class RssService {
         SyndFeedInput input = new SyndFeedInput();
         input.setPreserveWireFeed(true);
         SyndFeed feed = input.build(new XmlReader(url));
-
         List<SyndEntry> entries = feed.getEntries();
 
         // url에 맞는 parser선택
@@ -70,6 +70,50 @@ public class RssService {
                 .filter(p -> p.supports(feedUrl))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
+        Set<String> entryLinks = entries.stream()
+                .map(SyndEntry::getLink)
+                .collect(Collectors.toSet());
+
+        Set<String> existingLinks = postRepository.findExistingLinksByFeed(rssFeed, entryLinks);
+        for (SyndEntry entry : entries) {
+            if (existingLinks.contains(entry.getLink())) {
+                continue;
+            }
+//            if (postRepository.existsByLink(entry.getLink())) {
+//                continue ;
+//            }
+            Element element = itemMap.get(entry.getLink());
+            RssPost rssPost = parser.parse(entry, feedUrl, element);
+            rssPost.setFeed(rssFeed);
+            saveIfNew(rssPost, feedUrl);
+        }
+    }
+
+    public void fetchRssFeedWithOutRefactor(String feedUrl, Feed rssFeed) throws Exception {
+        URL url = new URL(rssFeed.getFeedUrl());
+        SAXBuilder saxBuilder = new SAXBuilder();
+        Document document = saxBuilder.build(url);
+        Element channel = document.getRootElement().getChild("channel");
+        List<Element> rawItems = channel.getChildren("item");
+
+        // RSS을 XML로 직접 파싱하여 MAP으로 변환
+        Map<String, Element> itemMap = rawItems.stream()
+                .collect(Collectors.toMap(
+                        item -> item.getChildText("link"),
+                        item -> item
+                ));
+
+        SyndFeedInput input = new SyndFeedInput();
+        input.setPreserveWireFeed(true);
+        SyndFeed feed = input.build(new XmlReader(url));
+        List<SyndEntry> entries = feed.getEntries();
+
+        // url에 맞는 parser선택
+        RssParserStrategy parser = parserStrategies.stream()
+                .filter(p -> p.supports(feedUrl))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
+
         for (SyndEntry entry : entries) {
             if (postRepository.existsByLink(entry.getLink())) {
                 continue ;
@@ -81,8 +125,38 @@ public class RssService {
         }
     }
 
-    @Transactional
     public void fetchRssFeed(String feedUrl, UserFeed userFeed) throws Exception {
+        URL url = new URL(feedUrl);
+        SyndFeedInput input = new SyndFeedInput();
+        SyndFeed feed = input.build(new XmlReader(url));
+
+        List<SyndEntry> entries = feed.getEntries();
+
+        // url에 맞는 parser선택
+        RssParserStrategy parser = parserStrategies.stream()
+                .filter(p -> p.supports(feedUrl))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다"));
+
+        Set<String> entryLinks = entries.stream()
+                .map(SyndEntry::getLink)
+                .collect(Collectors.toSet());
+        Set<String> existingLinksByUserFeed = postRepository.findExistingLinksByUserFeed(userFeed, entryLinks);
+
+        for (SyndEntry entry : entries) {
+            if (existingLinksByUserFeed.contains(entry.getLink())) {
+                continue;
+            }
+//            if (postRepository.existsByLinkAndUserFeed(entry.getLink(), userFeed)) {
+//                return ;
+//            }
+            RssPost rssPost = parser.parse(entry, feedUrl);
+            rssPost.setUserFeed(userFeed);
+            saveIfNew(rssPost, feedUrl);
+        }
+    }
+
+    public void fetchRssFeedWithOutRefactor(String feedUrl, UserFeed userFeed) throws Exception {
         URL url = new URL(feedUrl);
         SyndFeedInput input = new SyndFeedInput();
         SyndFeed feed = input.build(new XmlReader(url));

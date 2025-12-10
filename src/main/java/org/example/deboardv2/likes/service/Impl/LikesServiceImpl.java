@@ -9,6 +9,7 @@ import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.service.UserService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,7 @@ public class LikesServiceImpl implements LikeService {
             likesRepository.save(entity);
             return true;
         }
+
     }
 
     @Override
@@ -58,5 +60,4 @@ public class LikesServiceImpl implements LikeService {
             postRepository.decreaseLikeCount(postId);
         }
     }
-
 }

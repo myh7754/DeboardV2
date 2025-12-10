@@ -6,12 +6,14 @@ import org.example.deboardv2.likes.repository.LikesRepository;
 import org.example.deboardv2.likes.service.LikeService;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.rss.service.RssScheduler;
 import org.example.deboardv2.user.dto.MemberDetails;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.example.deboardv2.user.service.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,9 +47,13 @@ public class DeboardV2ApplicationTests {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RssScheduler rssScheduler;
+
     private Post post;
     private List<User> testUsers;
     private static final int THREAD_COUNT = 100;
+
 
     @BeforeEach
     void setup() {
@@ -114,6 +120,60 @@ public class DeboardV2ApplicationTests {
 //        // 둘이 일치해야 함
 //        Assertions.assertEquals(likesCount, result.getLikeCount(),
 //                String.format("likeCount 불일치! post=%d, likesTable=%d", result.getLikeCount(), likesCount));
+    }
+
+
+    @Test
+    @DisplayName("RSS 성능 비교 - 3회 평균")
+    void performanceComparison() throws Exception {
+        System.out.println("=== 워밍업 ===");
+        rssScheduler.fetchAllRssFeedsWithOut();
+        Thread.sleep(3000);
+
+        // 동기 3회 측정
+        System.out.println("\n=== 동기 처리 측정 ===");
+        long sync1 = measureSync();
+        Thread.sleep(2000);
+        long sync2 = measureSync();
+        Thread.sleep(2000);
+        long sync3 = measureSync();
+
+        double syncAvg = (sync1 + sync2 + sync3) / 3.0;
+        System.out.println("동기 평균: " + syncAvg + "ms");
+
+        Thread.sleep(3000);
+
+        // 비동기 3회 측정
+        System.out.println("\n=== 비동기 처리 측정 ===");
+        long async1 = measureAsync();
+        Thread.sleep(2000);
+        long async2 = measureAsync();
+        Thread.sleep(2000);
+        long async3 = measureAsync();
+
+        double asyncAvg = (async1 + async2 + async3) / 3.0;
+        System.out.println("비동기 평균: " + asyncAvg + "ms");
+
+        System.out.println("\n=== 최종 결과 ===");
+        System.out.println("동기: " + syncAvg + "ms");
+        System.out.println("비동기: " + asyncAvg + "ms");
+        System.out.println("개선율: " + String.format("%.1f%%", (syncAvg - asyncAvg) / syncAvg * 100));
+    }
+
+    private long measureSync() throws Exception {
+        long start = System.currentTimeMillis();
+        rssScheduler.fetchAllRssFeedsWithOut();
+        long duration = System.currentTimeMillis() - start;
+        System.out.println("  측정: " + duration + "ms");
+        return duration;
+    }
+
+    private long measureAsync() throws Exception {
+        long start = System.currentTimeMillis();
+        rssScheduler.fetchAllRssFeeds();
+        long duration = System.currentTimeMillis() - start;
+        System.out.println("  측정: " + duration + "ms");
+        return duration;
     }
 }
 

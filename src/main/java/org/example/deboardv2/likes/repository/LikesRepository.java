@@ -15,4 +15,6 @@ public interface LikesRepository extends JpaRepository<Likes, Long> {
     // 좋아요 존재 여부 확인
     boolean existsByPostIdAndUserId(Long postId, Long userId);
     int countByPostId(Long postId);
+
+    void deleteByPostIdAndUserId(Long postId, Long userId);
 }

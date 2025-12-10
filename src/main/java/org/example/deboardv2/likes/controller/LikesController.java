@@ -18,7 +18,6 @@ public class LikesController {
     @Operation(summary = "좋아요 요청", description = "게시글 좋아요 요청.")
     @PostMapping("/{postId}")
     public ResponseEntity<?> toggleLike(@PathVariable("postId") Long postId) {
-//        likeService.toggleLike(postId);
         Boolean likeStatus = likeService.toggleLikeRecord(postId);
         likeService.updateLikeCount(postId, likeStatus);
         return ResponseEntity.ok().build();
