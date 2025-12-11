@@ -12,14 +12,25 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig {
 
-    @Bean(name = "rssTaskExecutor")
-    public Executor rssTaskExecutor() {
+    @Bean(name = "rssTaskExcutor")
+    public Executor rssTaskExcutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 권장값 (환경에 따라 조정)
         executor.setCorePoolSize(6);
         executor.setMaxPoolSize(20);
         executor.setQueueCapacity(200);
         executor.setThreadNamePrefix("rss-exec-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "mailTaskExcutor")
+    public Executor mailTaskExcutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(3);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("mail-exec-");
         executor.initialize();
         return executor;
     }

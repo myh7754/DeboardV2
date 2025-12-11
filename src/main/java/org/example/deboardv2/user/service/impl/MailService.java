@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -18,6 +19,7 @@ public class MailService {
     private final JavaMailSender mailSender;
     // Smtp의 메일 보내는 방식이 2가지 있음
     // 1. SimpleMailMessage를 통한 간단한 텍스트 전송 방법
+    @Async("mailTaskExcutor")
     public void sendSimpleMailMessage(String email, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         try {
@@ -32,6 +34,7 @@ public class MailService {
     }
 
     // 2. MimeMessage를 통한 html, 첨부파일, 수신자 복수 지정 등 복잡한 메일 전송 방법
+    @Async("mailTaskExcutor")
     public void sendMimeMessage() throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
