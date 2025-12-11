@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 public class AsyncRssService {
     private final RssService rssService;
 
-    @Async("rssTaskExecutor")
+    @Async("rssTaskExcutor")
     public CompletableFuture<Void> processFeed(Feed feed) {
         try {
             rssService.fetchRssFeed(feed.getFeedUrl(),feed);
@@ -25,7 +25,7 @@ public class AsyncRssService {
         return CompletableFuture.completedFuture(null);
     }
 
-    @Async("rssTaskExecutor")
+    @Async("rssTaskExcutor")
     public CompletableFuture<Void> processUserFeed(UserFeed userFeed) {
         try {
             rssService.fetchRssFeed(userFeed.getFeedUrl(), userFeed);
