@@ -6,6 +6,7 @@ import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
+import org.example.deboardv2.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,7 +19,6 @@ import java.util.Set;
 
 
 public interface PostRepository extends JpaRepository<Post,Long> {
-//    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Post> findById(Long id);
     Page<Post> findAll(Pageable pageable);
     @Modifying
@@ -30,19 +30,20 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             "WHERE p.id = :postId AND p.author.id = :authorId")
     int updateByIdAndAuthorId(Long postId, String title, String content, Long authorId);
     Boolean existsByIdAndAuthorId(Long postId, Long authorId);
-    @Modifying(clearAutomatically = true)
+    @Modifying
     @Query("UPDATE Post p SET p.likeCount = p.likeCount + 1 WHERE p.id = :postId")
     void increaseLikeCount(@Param("postId") Long postId);
-
-    @Modifying(clearAutomatically = true)
+    @Modifying
     @Query("UPDATE Post p SET p.likeCount = p.likeCount - 1 WHERE p.id = :postId AND p.likeCount > 0")
     void decreaseLikeCount(@Param("postId") Long postId);
-
 
     @Query("SELECT p.link FROM Post p WHERE p.feed = :feed AND p.link IN :links")
     Set<String> findExistingLinksByFeed(@Param("feed") Feed feed, @Param("links") Set<String> links);
     @Query("SELECT p.link FROM Post p WHERE p.userFeed = :userFeed AND p.link IN :links")
     Set<String> findExistingLinksByUserFeed(@Param("userFeed") UserFeed userFeed, @Param("links") Set<String> links);
 
-
+    // 이 메서드를 호출하는 순간 Post 행에 DB 쓰기 잠금(P-Lock)을 강제로 겁니다.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Post p WHERE p.id = :postId")
+    Optional<Post> findByIdForUpdate(@Param("postId") Long postId);
 }

@@ -7,6 +7,7 @@ import org.example.deboardv2.likes.service.LikeService;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.user.dto.MemberDetails;
+import org.example.deboardv2.user.dto.TokenBody;
 import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.example.deboardv2.user.service.UserService;
@@ -15,15 +16,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -47,7 +54,7 @@ public class DeboardV2ApplicationTests {
 
     private Post post;
     private List<User> testUsers;
-    private static final int THREAD_COUNT = 100;
+    private static final int THREAD_COUNT = 120;
 
     @BeforeEach
     void setup() {
@@ -84,36 +91,57 @@ public class DeboardV2ApplicationTests {
 
     @Test
     void 좋아요_동시성_문제_테스트() throws InterruptedException {
-//        int threadCount = THREAD_COUNT;
-//        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-//        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
-//        for (int i = 0; i < THREAD_COUNT; i++) {
-//            int userIndex = i;
-//            executorService.submit(() -> {
-//                try {
-//                    User user =  testUsers.get(userIndex);
-//                    boolean likesStatus = likeService.toggleLikeRecord(post.getId(), user);
-//                    likeService.updateLikeCount(post.getId(), likesStatus);
-//                } catch (Exception e) {
-//                    log.error(e.getMessage());
-//                } finally {
-//                    latch.countDown();
-//                }
-//            });
-//        }
-//        latch.await(); // 모든 스레드 종료 대기
-//        executorService.shutdown();
-//
-//        // === 결과 검증 ===
-//        Post result = postRepository.findById(post.getId()).orElseThrow();
-//        long likesCount = likesRepository.countByPostId(post.getId());
-//
-//        log.info("최종 likeCount = {}", result.getLikeCount());
-//        log.info("Likes 테이블 count = {}", likesCount);
-//
-//        // 둘이 일치해야 함
-//        Assertions.assertEquals(likesCount, result.getLikeCount(),
-//                String.format("likeCount 불일치! post=%d, likesTable=%d", result.getLikeCount(), likesCount));
+        int threadCount = THREAD_COUNT;
+        Long postId = 1L;
+        CyclicBarrier barrier = new CyclicBarrier(threadCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(300);
+        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
+
+        // 개별 실행 시간의 합을 저장할 변수
+        AtomicLong totalExecutionTime = new AtomicLong(0);
+        List<Long> latencies = Collections.synchronizedList(new ArrayList<>()); // 각 요청별 소요시간 저장
+        // 전체 시작 시간 측정
+        long testStartTime = System.nanoTime();
+        for (int i = 0; i < threadCount; i++) {
+            Long userId = (long) (i + 1); // 1~300번 유저
+            executorService.submit(() -> {
+                try {
+                    TokenBody tokenBody = new TokenBody(userId, null, null);
+                    Authentication auth = new UsernamePasswordAuthenticationToken(tokenBody, null,
+                            null);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    barrier.await();
+
+                    long requestStart = System.nanoTime();
+                    likeService.toggleLike(postId);
+                    long requestEnd = System.nanoTime();
+                    long duration =(requestEnd - requestStart)/1_000_000;
+                    latencies.add(duration);
+                    totalExecutionTime.addAndGet(duration);
+                } catch (Exception e) {
+                    log.error("에러발생 : "+ e.getMessage());
+                } finally {
+                    SecurityContextHolder.clearContext();
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        long testEndTime = System.nanoTime();
+        // 2. 결과 분석 및 출력
+        double totalTimeSec = (testEndTime - testStartTime) / 1_000_000_000.0;
+        double avgLatency = (double) totalExecutionTime.get() / threadCount;
+
+        // TPS(초당 처리량) 계산
+        double tps = threadCount / totalTimeSec;
+
+        Post post = postRepository.findById(postId).orElseThrow();
+        log.info("최종 좋아요 수 {}", post.getLikeCount());
+        log.info("평균 응답 시간: {}ms", String.format("%.2f", avgLatency));
+        log.info("초당 처리량(TPS): {}", String.format("%.2f", tps));
+        assertThat(post.getLikeCount()).isEqualTo(likesRepository.countByPostId(postId));
+
     }
 }
 

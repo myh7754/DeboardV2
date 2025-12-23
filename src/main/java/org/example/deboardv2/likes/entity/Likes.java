@@ -12,7 +12,8 @@ import org.example.deboardv2.user.entity.User;
 @NoArgsConstructor
 @Table(
         name = "likes",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "post_id"})}) // 중복 방지
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "post_id"})
+        }) // 중복 방지
 public class Likes {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "likes_id")

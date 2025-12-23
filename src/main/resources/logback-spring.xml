@@ -17,8 +17,18 @@
         </encoder>
         <!-- 필터 추가 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
-        </filter>
+            <level>ERROR</level>
+        </filter>2025-12-12T20:06:20.765+09:00 ERROR 23636 --- [io-8080-exec-76] o.h.engine.jdbc.spi.SqlExceptionHelper   : HikariPool-1 - Connection is not available, request timed out after 30061ms (total=10, active=10, idle=0, waiting=189)
+        2025-12-12T20:06:20.789+09:00 ERROR 23636 --- [io-8080-exec-76] o.e.d.s.e.GlobalExceptionHandler         : [a2f102e1-e370-4d6c-b3a3-7a340e0e4b6f] POST /api/likes/1 - CannotCreateTransactionException: Could not open JPA EntityManager for transaction
+
+        org.springframework.transaction.CannotCreateTransactionException: Could not open JPA EntityManager for transaction
+        at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:466)
+        at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532)
+        at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405)
+        at org.springframework.transaction.interceptor.TransactionAspectSupport.createTransactionIfNecessary(TransactionAspectSupport.java:639)
+        at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:374)
+        at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
     </appender>
 
     <!-- JSON 로그 파일 Appender -->

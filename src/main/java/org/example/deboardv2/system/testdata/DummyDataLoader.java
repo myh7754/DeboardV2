@@ -5,12 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.comment.repository.CommentsRepository;
 import org.example.deboardv2.likes.repository.LikesRepository;
-import org.example.deboardv2.post.dto.PostCreateDto;
-import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
-import org.example.deboardv2.user.dto.MemberDetails;
-import org.example.deboardv2.user.dto.SignupRequest;
-import org.example.deboardv2.user.entity.User;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.service.AsyncRssService;
+import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,12 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 
 @Component
@@ -37,6 +31,8 @@ public class DummyDataLoader implements CommandLineRunner {
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
+    private final RssService rssService;
+    private final AsyncRssService asyncRssService;
 
     @Override
     @Transactional
@@ -115,7 +111,9 @@ public class DummyDataLoader implements CommandLineRunner {
             return;
         }
 
-        int totalUsers = 50; // 삽입할 유저 수
+        Feed feed = rssService.registerFeed("카카오 기술 블로그","tech.kakao.com/blog");
+        asyncRssService.processFeed(feed);
+        int totalUsers = 3000; // 삽입할 유저 수
         log.info("더미 데이터 {}건 삽입 시작...", totalUsers);
 
         String password123 = passwordEncoder.encode("password123");

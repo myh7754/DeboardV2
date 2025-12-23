@@ -1,9 +1,11 @@
-package org.example.deboardv2.rss.service;
+package org.example.deboardv2.system.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
+import org.example.deboardv2.rss.service.AsyncRssService;
+import org.example.deboardv2.rss.service.RssService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

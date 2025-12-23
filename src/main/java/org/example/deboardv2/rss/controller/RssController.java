@@ -6,6 +6,7 @@ import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.UserFeed;
 import org.example.deboardv2.rss.dto.FeedDto;
 import org.example.deboardv2.rss.dto.UserFeedDto;
+import org.example.deboardv2.rss.service.AsyncRssService;
 import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.rss.service.RssParserStrategy;
 import org.example.deboardv2.user.entity.User;
@@ -23,11 +24,12 @@ import java.util.stream.Collectors;
 public class RssController {
     private final UserService userService;
     private final RssService rssService;
+    private final AsyncRssService asyncRssService;
 
     @PostMapping("/feed")
     public ResponseEntity<?> registerFeed(@RequestParam String name, @RequestParam String url) throws Exception {
         Feed feed = rssService.registerFeed(name, url);
-        rssService.fetchRssFeed(feed.getFeedUrl(), feed);
+        asyncRssService.processFeed(feed);
         return ResponseEntity.ok().build();
     }
 
@@ -48,7 +50,7 @@ public class RssController {
     @PostMapping("/user-feed")
     public ResponseEntity<?> registerUserFeed(@RequestParam String name, @RequestParam String url) throws Exception {
         UserFeed userFeed = rssService.registerUserFeed(name, url);
-        rssService.fetchRssFeed(userFeed.getFeedUrl(), userFeed);
+        asyncRssService.processUserFeed(userFeed);
         return ResponseEntity.ok().build();
     }
 

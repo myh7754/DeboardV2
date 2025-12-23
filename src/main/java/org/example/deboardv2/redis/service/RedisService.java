@@ -1,6 +1,7 @@
 package org.example.deboardv2.redis.service;
 
 import java.time.Duration;
+import java.util.Set;
 
 public interface RedisService {
     // 값 저장
@@ -26,4 +27,5 @@ public interface RedisService {
     // timeout : 만료 시간 숫자
     // unit : 시간 단위 TimeUnit.SECONDS, TimeUnit.MINUTES 등
     void setValueWithExpire(String key, Object value, Duration expireTime);
+
 }
