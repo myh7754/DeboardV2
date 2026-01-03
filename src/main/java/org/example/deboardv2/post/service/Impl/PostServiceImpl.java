@@ -40,6 +40,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Post getPostById(Long postId) {
         return postRepository.findById(postId).orElseThrow(
                 ()-> new CustomException(ErrorCode.POST_NOT_FOUND)
@@ -52,6 +53,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PostDetails getPostDtoById(Long postId) {
         return postCustomRepository.getPostDetails(postId);
     }

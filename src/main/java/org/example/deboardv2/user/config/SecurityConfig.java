@@ -25,7 +25,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .cors(cors -> {})
+                .cors(cors -> {}) 
                 // 여기서 userInfoEndpoint로 customoauthservice를 지정하는 이유는 기본 설정된 loadUser말고 내가 직접 커스텀해서 사용하는
                 // loadUser를 이용하여 만들기 위함
                 .oauth2Login(oauth->oauth

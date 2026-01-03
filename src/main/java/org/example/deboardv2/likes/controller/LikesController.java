@@ -31,6 +31,7 @@ public class LikesController {
     @Operation(summary = "좋아요 조회", description = "게시글 좋아요 여부 조회")
     @GetMapping("/{postId}")
     public ResponseEntity<?> getLike(@PathVariable("postId") Long postId) {
+        log.info("좋아요 여부 조회");
         return ResponseEntity.ok().body(likeService.getLikeStatus(postId));
     }
 

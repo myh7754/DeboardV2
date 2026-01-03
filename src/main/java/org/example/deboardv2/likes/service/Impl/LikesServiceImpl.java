@@ -37,6 +37,7 @@ public class LikesServiceImpl implements LikeService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public boolean getLikeStatus(Long postId) {
         return userService.getCurrentUserIdifExists()
                 .map(userId -> likesRepository.existsByPostIdAndUserId(postId, userId))
@@ -46,21 +47,21 @@ public class LikesServiceImpl implements LikeService {
     // 1. 원자적 업데이트
     @Override
     @Transactional
-    @Retryable(
-            value = {ObjectOptimisticLockingFailureException.class},
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 100) // 재시도 간격 100ms
-    )
+//    @Retryable(
+//            value = {ObjectOptimisticLockingFailureException.class},
+//            maxAttempts = 3,
+//            backoff = @Backoff(delay = 100) // 재시도 간격 100ms
+//    )
     public void toggleLike(Long postId) {
         Long userId = userService.getCurrentUserId();
         try {
-            boolean isLiked = likesRepository.existsByPostIdAndUserId(postId, userId);
-            if (isLiked) {
+            Optional<Likes> like = likesRepository.findByPostIdAndUserId(postId, userId);
+            if (like.isPresent()) {
                 postRepository.decreaseLikeCount(postId);
-                likesRepository.deleteByPostIdAndUserId(postId, userId);
+                likesRepository.delete(like.get());
             } else {
-                Post post = postService.getPostById(postId);
-                User user = userService.getCurrentUser();
+                Post post = postService.getPostReferenceById(postId);
+                User user = userService.getUserReferenceById(userId);
                 postRepository.increaseLikeCount(postId);
                 likesRepository.save(Likes.toEntity(user, post));
             }

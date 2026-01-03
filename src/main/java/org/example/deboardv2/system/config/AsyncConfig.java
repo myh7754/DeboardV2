@@ -16,9 +16,9 @@ public class AsyncConfig {
     public Executor rssTaskExcutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 권장값 (환경에 따라 조정)
-        executor.setCorePoolSize(6);
-        executor.setMaxPoolSize(20);
-        executor.setQueueCapacity(200);
+        executor.setCorePoolSize(6);    // 평소에는 적은 스레드로 자원 절약
+        executor.setMaxPoolSize(20);    // 트래픽 급증 시 빠르게 확장 가능
+        executor.setQueueCapacity(200); // 대기열을 얼마나 세울지
         executor.setThreadNamePrefix("rss-exec-");
         executor.initialize();
         return executor;

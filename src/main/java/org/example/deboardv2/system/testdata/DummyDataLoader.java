@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,74 +36,7 @@ public class DummyDataLoader implements CommandLineRunner {
     private final AsyncRssService asyncRssService;
 
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
-//        int total = 100_000;
-//        int batchSize = 1000;
-//
-//        log.info("더미 데이터 {}건 삽입 시작...", total);
-//        String password123 = passwordEncoder.encode("password123");
-//        List<Object[]> userBatch = new ArrayList<>();
-//        for (int i = 1; i <= total; i++) {
-//            userBatch.add(new Object[]{
-//                    "user" + i + "@gmail.com",         // email (첫 번째)
-//                    "user" + i,                        // nickname (두 번째)
-//                    password123,                       // password (세 번째)
-//                    null,                              // provider (네 번째) - NULL 허용
-//                    "ROLE_MEMBER"                      // role (다섯 번째)
-//            });
-//
-//            if (i % batchSize == 0) {
-//                jdbcTemplate.batchUpdate(
-//                        "INSERT INTO user (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
-//                        userBatch
-//                );
-//                userBatch.clear();
-//                log.info("{} users inserted...", i);
-//            }
-//        }
-//
-//        if (!userBatch.isEmpty()) {
-//            jdbcTemplate.batchUpdate(
-//                    "INSERT INTO user (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
-//                    userBatch
-//            );
-//        }
-//
-//        log.info("user 데이터 삽입 완료!");
-//
-//        // Post 데이터도 동일한 방식으로 batch insert
-//        List<Object[]> postBatch = new ArrayList<>();
-//        LocalDateTime now = LocalDateTime.now();
-//        for (int i = 1; i <= total; i++) {
-//            postBatch.add(new Object[]{
-//                    0,                                  // like_count (NOT NULL)
-//                    now,                                // created_at (NOT NULL)
-//                    null,                               // updated_at (NULL 허용)
-//                    1L,                                 // user_id
-//                    "content" + i,                      // content
-//                    null,                               // image (NULL 허용)
-//                    "title" + i                         // title
-//            });
-//
-//            if (i % batchSize == 0) {
-//                jdbcTemplate.batchUpdate(
-//                        "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
-//                        postBatch
-//                );
-//                postBatch.clear();
-//                log.info("{} posts inserted...", i);
-//            }
-//        }
-//
-//        if (!postBatch.isEmpty()) {
-//            jdbcTemplate.batchUpdate(
-//                    "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
-//                    postBatch
-//            );
-//        }
-//
-//        log.info("post 데이터 삽입 완료!");
 
         // EC2 배포용 시작 더미데이터 50명 추가 db에 데이터가 없다면 실행
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user", Integer.class);
@@ -114,7 +48,7 @@ public class DummyDataLoader implements CommandLineRunner {
         Feed feed = rssService.registerFeed("카카오 기술 블로그","tech.kakao.com/blog");
         asyncRssService.processFeed(feed);
         int totalUsers = 3000; // 삽입할 유저 수
-        log.info("더미 데이터 {}건 삽입 시작...", totalUsers);
+        log.info("더미 데이터 유저 {}건 삽입 시작...", totalUsers);
 
         String password123 = passwordEncoder.encode("password123");
         List<Object[]> userBatch = new ArrayList<>();
@@ -132,6 +66,44 @@ public class DummyDataLoader implements CommandLineRunner {
                 "INSERT INTO user (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
                 userBatch
         );
+
+        int total = 1_000_000;
+        int batchSize = 5000;
+
+        log.info("더미 데이터 post {}건 삽입 시작...", total);
+
+        // Post 데이터도 동일한 방식으로 batch insert
+        List<Object[]> postBatch = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.of(2010, 1, 1, 0, 0, 0);
+        for (int i = 1; i <= total; i++) {
+            postBatch.add(new Object[]{
+                    0,                                  // like_count (NOT NULL)
+                    now,                                // created_at (NOT NULL)
+                    now,                               // updated_at (NULL 허용)
+                    1L,                                 // user_id
+                    "content" + i,                      // content
+                    null,                               // image (NULL 허용)
+                    "title" + i                         // title
+            });
+
+            if (i % batchSize == 0) {
+                jdbcTemplate.batchUpdate(
+                        "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        postBatch
+                );
+                postBatch.clear();
+                log.info("{} posts inserted...", i);
+            }
+        }
+
+        if (!postBatch.isEmpty()) {
+            jdbcTemplate.batchUpdate(
+                    "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    postBatch
+            );
+        }
+
+        log.info("post 데이터 삽입 완료!");
 
         log.info("user {}명 데이터 삽입 완료!", totalUsers);
     }
