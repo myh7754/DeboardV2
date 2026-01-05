@@ -22,6 +22,7 @@ public class UserFeed { // 계정별 개인 블로그
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     private String feedUrl;   // https://velog.io/@user/rss

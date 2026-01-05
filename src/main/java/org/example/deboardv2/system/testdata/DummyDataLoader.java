@@ -39,7 +39,7 @@ public class DummyDataLoader implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // EC2 배포용 시작 더미데이터 50명 추가 db에 데이터가 없다면 실행
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user", Integer.class);
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
         if (count != null && count > 0) {
             log.info("이미 user 데이터가 존재합니다 ({}명). 더미 데이터 삽입 건너뜀.", count);
             return;
@@ -63,16 +63,18 @@ public class DummyDataLoader implements CommandLineRunner {
         }
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO user (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO users (email, nickname, password, provider, role) VALUES (?, ?, ?, ?, ?)",
                 userBatch
         );
 
+        log.info("users {}명 데이터 삽입 완료!", totalUsers);
+
+        // Post 데이터도 동일한 방식으로 batch insert
         int total = 1_000_000;
         int batchSize = 5000;
 
         log.info("더미 데이터 post {}건 삽입 시작...", total);
 
-        // Post 데이터도 동일한 방식으로 batch insert
         List<Object[]> postBatch = new ArrayList<>();
         LocalDateTime now = LocalDateTime.of(2010, 1, 1, 0, 0, 0);
         for (int i = 1; i <= total; i++) {
@@ -104,8 +106,6 @@ public class DummyDataLoader implements CommandLineRunner {
         }
 
         log.info("post 데이터 삽입 완료!");
-
-        log.info("user {}명 데이터 삽입 완료!", totalUsers);
     }
 
 }

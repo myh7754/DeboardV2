@@ -24,11 +24,11 @@ import java.util.*;
 public class LoggingAspect {
 
     private final ObjectMapper objectMapper; // java , json 직렬화 역직렬화 도구
-//    // ProceedingJoinPoint 내부에 결과
-//    // excution의 값을 가져다 사용함
-//    // execution(* org.example.deboardv2..service..*(..)) =>
-//    // excution // 어떤 메서드가 실행되는 지점
-//    // (해당 메서드의 반환타입 org.example.deboardv2..service.. 해당메서드시그니처(타입포함)
+    // ProceedingJoinPoint 내부에 결과
+    // excution의 값을 가져다 사용함
+    // execution(* org.example.deboardv2..service..*(..)) =>
+    // excution // 어떤 메서드가 실행되는 지점
+    // (해당 메서드의 반환타입 org.example.deboardv2..service.. 해당메서드시그니처(타입포함)
 //    @Around("execution(* org.example.deboardv2..service..*(..))")
 //    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
 //        // ProceedingJoinPoint 사용법
@@ -45,7 +45,7 @@ public class LoggingAspect {
 //        else log.info("{} 실행시간 {}ms", joinPoint.getSignature().toShortString(), ms);
 //        return result;
 //    }
-
+//
 //    @Around("execution(* org.example.deboardv2..controller..*(..))")
 //    public Object logController(ProceedingJoinPoint joinPoint) throws Throwable {
 //        long start = System.currentTimeMillis();
@@ -73,7 +73,6 @@ public class LoggingAspect {
 //        }
 //    }
 
-// Controller는 요청/응답 로깅, Service는 실행 시간만 로깅
 // Controller는 요청/응답 로깅, Service는 실행 시간만 로깅
     @Pointcut("execution(* org.example.deboardv2..controller..*(..))")
     public void controllerLayer() {}

@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,8 +63,9 @@ public class RssService {
 
         SyndFeedInput input = new SyndFeedInput();
         input.setPreserveWireFeed(true);
+        // 피드 전체
         SyndFeed feed = input.build(new XmlReader(url));
-
+        // 피드의 개별 게시글들
         List<SyndEntry> entries = feed.getEntries();
 
         // url에 맞는 parser선택
@@ -75,18 +78,19 @@ public class RssService {
                 .collect(Collectors.toSet());
 
         Set<String> existingLinks = postRepository.findExistingLinksByFeed(rssFeed, entryLinks);
-        for (SyndEntry entry : entries) {
-            if (existingLinks.contains(entry.getLink())) {
-                continue;
-            }
-//            if (postRepository.existsByLink(entry.getLink())) {
-//                continue ;
-//            }
-            Element element = itemMap.get(entry.getLink());
-            RssPost rssPost = parser.parse(entry, feedUrl, element);
-            rssPost.setFeed(rssFeed);
-            saveIfNew(rssPost, feedUrl);
+        
+        // 성능 개선: 배치 처리로 변경
+        // 1. 새로 저장할 entry만 필터링
+        List<SyndEntry> newEntries = entries.stream()
+                .filter(entry -> !existingLinks.contains(entry.getLink()))
+                .collect(Collectors.toList());
+        
+        if (newEntries.isEmpty()) {
+            return; // 새 항목이 없으면 조기 종료
         }
+        
+        // 2. 배치로 저장 (트랜잭션 1번, 배치 INSERT)
+        saveAllBatch(newEntries, feedUrl, rssFeed, parser, itemMap);
     }
 
     public void fetchRssFeed(String feedUrl, UserFeed userFeed) throws Exception {
@@ -107,16 +111,22 @@ public class RssService {
                 .collect(Collectors.toSet());
         Set<String> existingLinksByUserFeed = postRepository.findExistingLinksByUserFeed(userFeed, entryLinks);
 
-        for (SyndEntry entry : entries) {
-            if (existingLinksByUserFeed.contains(entry.getLink())) {
-                continue;
-            }
-            RssPost rssPost = parser.parse(entry, feedUrl);
-            rssPost.setUserFeed(userFeed);
-            saveIfNew(rssPost, feedUrl);
+        // 성능 개선: 배치 처리로 변경
+        List<SyndEntry> newEntries = entries.stream()
+                .filter(entry -> !existingLinksByUserFeed.contains(entry.getLink()))
+                .collect(Collectors.toList());
+        
+        if (newEntries.isEmpty()) {
+            return; // 새 항목이 없으면 조기 종료
         }
+        
+        // 배치로 저장
+        saveAllBatchForUserFeed(newEntries, feedUrl, userFeed, parser);
     }
 
+    /**
+     * 개별 저장 (레거시 - 호환성 유지용)
+     */
     @Transactional
     protected void saveIfNew(RssPost rssPost, String feedUrl) throws Exception {
         ExternalAuthor author = externalAuthorRepository
@@ -135,19 +145,150 @@ public class RssService {
                 rssPost.getPublishedAt(),
                 author,
                 rssPost.getFeed(),
-                rssPost.getUserFeed() // 여기서 UserFeed가 있다면 getUserFeed를 Feed가 있다면 getFeed를
+                rssPost.getUserFeed()
         );
         postRepository.save(post);
     }
 
+    /**
+     * 성능 개선: 배치 저장 (Feed용)
+     * - 트랜잭션 1번
+     * - Author 배치 조회
+     * - Post 배치 저장
+     */
+    @Transactional
+    protected void saveAllBatch(List<SyndEntry> entries, String feedUrl, Feed rssFeed, 
+                                RssParserStrategy parser, Map<String, Element> itemMap) throws Exception {
+        // 1. 모든 RssPost 파싱
+        List<RssPost> rssPosts = new ArrayList<>();
+        for (SyndEntry entry : entries) {
+            Element element = itemMap.get(entry.getLink());
+            RssPost rssPost = parser.parse(entry, feedUrl, element);
+            rssPost.setFeed(rssFeed);
+            rssPosts.add(rssPost);
+        }
+        
+        // 2. 필요한 모든 author 이름 수집 (중복 제거) : 중복 제거하는 이유는 작성자는 게시글마다 새로 만들면 안되는 객체이기 때문
+        Set<String> authorNames = rssPosts.stream()
+                .map(RssPost::getAuthor)
+                .collect(Collectors.toSet());
+        
+        // 3. Author 배치 조회 (N번 쿼리 -> 1번 쿼리) : 한번에 필요한 작성자들이 있다면 전부 조회
+        List<ExternalAuthor> existingAuthors = externalAuthorRepository
+                .findBySourceUrlAndNamesIn(feedUrl, authorNames);
+        Map<String, ExternalAuthor> authorMap = existingAuthors.stream()
+                .collect(Collectors.toMap(
+                        ExternalAuthor::getName,
+                        author -> author,
+                        (existing, replacement) -> existing
+                ));
+        
+        // 4. 없는 author는 생성 (메모리에서만) : 만약 조회해온 작성자에 새로운 작성자가 포함이 안되어 있다면 저장
+        List<ExternalAuthor> newAuthors = new ArrayList<>();
+        for (String authorName : authorNames) {
+            if (!authorMap.containsKey(authorName)) {
+                ExternalAuthor newAuthor = new ExternalAuthor();
+                newAuthor.update(authorName, feedUrl);
+                authorMap.put(authorName, newAuthor);
+                newAuthors.add(newAuthor);
+            }
+        }
+        
+        // 5. 새 author 배치 저장
+        if (!newAuthors.isEmpty()) {
+            externalAuthorRepository.saveAll(newAuthors);
+        }
+        
+        // 6. Post 엔티티 생성 및 배치 저장
+        List<Post> posts = rssPosts.stream()
+                .map(rssPost -> Post.fromRss(
+                        rssPost.getTitle(),
+                        rssPost.getContent(),
+                        rssPost.getImage(),
+                        rssPost.getLink(),
+                        rssPost.getPublishedAt(),
+                        authorMap.get(rssPost.getAuthor()),
+                        rssPost.getFeed(),
+                        rssPost.getUserFeed()
+                ))
+                .collect(Collectors.toList());
+        
+        postRepository.saveAll(posts); // 배치 INSERT
+    }
+
+    /**
+     * 성능 개선: 배치 저장 (UserFeed용)
+     */
+    @Transactional
+    protected void saveAllBatchForUserFeed(List<SyndEntry> entries, String feedUrl, UserFeed userFeed,
+                                          RssParserStrategy parser) throws Exception {
+        // 1. 모든 RssPost 파싱
+        List<RssPost> rssPosts = new ArrayList<>();
+        for (SyndEntry entry : entries) {
+            RssPost rssPost = parser.parse(entry, feedUrl);
+            rssPost.setUserFeed(userFeed);
+            rssPosts.add(rssPost);
+        }
+        
+        // 2. 필요한 모든 author 이름 수집
+        Set<String> authorNames = rssPosts.stream()
+                .map(RssPost::getAuthor)
+                .collect(Collectors.toSet());
+        
+        // 3. Author 배치 조회
+        List<ExternalAuthor> existingAuthors = externalAuthorRepository
+                .findBySourceUrlAndNamesIn(feedUrl, authorNames);
+        Map<String, ExternalAuthor> authorMap = existingAuthors.stream()
+                .collect(Collectors.toMap(
+                        ExternalAuthor::getName,
+                        author -> author,
+                        (existing, replacement) -> existing
+                ));
+        
+        // 4. 없는 author는 생성
+        List<ExternalAuthor> newAuthors = new ArrayList<>();
+        for (String authorName : authorNames) {
+            if (!authorMap.containsKey(authorName)) {
+                ExternalAuthor newAuthor = new ExternalAuthor();
+                newAuthor.update(authorName, feedUrl);
+                authorMap.put(authorName, newAuthor);
+                newAuthors.add(newAuthor);
+            }
+        }
+        
+        // 5. 새 author 배치 저장
+        if (!newAuthors.isEmpty()) {
+            externalAuthorRepository.saveAll(newAuthors);
+        }
+        
+        // 6. Post 엔티티 생성 및 배치 저장
+        List<Post> posts = rssPosts.stream()
+                .map(rssPost -> Post.fromRss(
+                        rssPost.getTitle(),
+                        rssPost.getContent(),
+                        rssPost.getImage(),
+                        rssPost.getLink(),
+                        rssPost.getPublishedAt(),
+                        authorMap.get(rssPost.getAuthor()),
+                        rssPost.getFeed(),
+                        rssPost.getUserFeed()
+                ))
+                .collect(Collectors.toList());
+        
+        postRepository.saveAll(posts); // 배치 INSERT
+    }
+
     @Transactional
     public Feed registerFeed(String name, String rssUrl) {
+        // 블로그 주소를 우리가 정의한 rss parser를 사용할 수 있는지 판단
         RssParserStrategy parser = parserStrategies.stream()
                 .filter(p -> p.supports(rssUrl))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 블로그입니다."));
+        // 지원하는 블로그라면 resolve 하여 rss 링크로 변환
         String resolvedUrl = parser.resolve(rssUrl);
 
+        // 만약 등록된 rss 링크라면 넘어가기 아니라면 신규 feed로 등록
         if (feedRepository.existsByFeedUrl(resolvedUrl)) {
             throw new CustomException(ErrorCode.DUPLICATED_FEED);
         } else {

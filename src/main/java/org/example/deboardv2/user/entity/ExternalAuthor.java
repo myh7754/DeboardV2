@@ -21,4 +21,12 @@ public class ExternalAuthor {
         this.name = name;
         this.sourceUrl = sourceUrl;
     }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
 }

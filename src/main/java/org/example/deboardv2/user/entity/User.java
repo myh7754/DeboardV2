@@ -10,6 +10,7 @@ import org.example.deboardv2.user.dto.UpdateRequest;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
