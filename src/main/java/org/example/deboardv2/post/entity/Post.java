@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostUpdateDto;
-import org.example.deboardv2.rss.domain.Feed;
-import org.example.deboardv2.rss.domain.UserFeed;
+import org.example.deboardv2.refactorrss.domain.Feed;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
@@ -38,10 +37,10 @@ public class Post extends BaseEntity {
     ExternalAuthor externalAuthor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Feed feed;        // 공용일 경우
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private UserFeed userFeed; // 개인일 경우
+    private Feed feed;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    private UserFeed userFeed; // 개인일 경우
 
     @Column(columnDefinition = "TEXT")
     private String link; // 게시글 원본 링크
@@ -59,7 +58,9 @@ public class Post extends BaseEntity {
     }
 
     public static Post fromRss(String title, String content,String image, String link,
-                               LocalDateTime createdAt, ExternalAuthor externalAuthor,Feed feed, UserFeed userFeed) {
+                               LocalDateTime createdAt, ExternalAuthor externalAuthor
+//            ,Feed feed, UserFeed userFeed
+    ) {
         Post post = new Post();
         post.title = title;
         post.content = content;
@@ -67,8 +68,8 @@ public class Post extends BaseEntity {
         post.link = link;
         post.externalAuthor = externalAuthor;
         post.setCreatedAt(createdAt); // BaseEntity에 createdAt 필드 있을 경우 보호된 setter 사용
-        post.feed = feed;
-        post.userFeed = userFeed;
+//        post.feed = feed;
+//        post.userFeed = userFeed;
         return post;
     }
 

@@ -1,23 +1,18 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.refactorrss.parser.Impl;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.rss.domain.RssPost;
-import org.example.deboardv2.rss.service.RssParserStrategy;
-import org.jdom2.Element;
+import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
+import org.example.deboardv2.refactorrss.domain.RssPost;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Service
-@Slf4j
-public class WoowahanRssParser implements RssParserStrategy {
+public class TistoryRssParser implements RssParserStrategy {
     @Override
     public boolean supports(String feedUrl) {
-        boolean contains = feedUrl.contains("techblog.woowahan.com");
-        log.info("contains {}", contains);
-        return contains;
+        return feedUrl.contains("tistory.com");
     }
 
     @Override
@@ -28,11 +23,12 @@ public class WoowahanRssParser implements RssParserStrategy {
         if (url.endsWith("/")) { // url이 /로 끝나는지 확인
             url = url.substring(0,url.length()-1); // 만약 /로 끝난다면 마지막/를 잘라냄
         }
-        return url.endsWith("/feed") ? url : url + "/feed";
+        return url.endsWith("/rss") ? url : url + "/rss";
     }
 
+    // 만약 tistory가 아닌경우 content내용이 축약되어 있는 경우 여기서 수정?
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl) {
+    public RssPost parse(SyndEntry entry) {
         return RssPost.builder()
                 .title(entry.getTitle())
                 .link(entry.getLink())
@@ -42,14 +38,9 @@ public class WoowahanRssParser implements RssParserStrategy {
                 .build();
     }
 
-    @Override
-    public RssPost parse(SyndEntry entry, String feedUrl, Element element) {
-        return RssParserStrategy.super.parse(entry, feedUrl, element);
-    }
-
     private String getDescription(SyndEntry entry) {
-        if (entry.getContents() != null && !entry.getContents().isEmpty()) {
-            return entry.getContents().get(0).getValue();
+        if (entry.getDescription() != null) {
+            return entry.getDescription().getValue();
         }
         return "(내용 없음)";
     }

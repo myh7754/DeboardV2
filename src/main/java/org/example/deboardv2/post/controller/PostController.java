@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
-import org.example.deboardv2.rss.service.RssService;
+//import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
     private final PostService postService;
     private final SearchService searchService;
-    private final RssService rssService;
+//    private final RssService rssService;
 
     @Operation(summary = "게시글 목록 조회", description = "검색된 혹은 모든 게시글을 조회합니다.")
     @GetMapping("/posts")

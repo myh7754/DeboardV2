@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig {
 
-    @Bean(name = "rssTaskExcutor")
+    @Bean(name = "rssTaskExecutor")
     public Executor rssTaskExcutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 권장값 (환경에 따라 조정)
@@ -24,7 +24,7 @@ public class AsyncConfig {
         return executor;
     }
 
-    @Bean(name = "mailTaskExcutor")
+    @Bean(name = "mailTaskExecutor")
     public Executor mailTaskExcutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(3);

@@ -1,15 +1,16 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.refactorrss.parser.Impl;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.rss.domain.RssPost;
-import org.example.deboardv2.rss.service.RssParserStrategy;
+import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
+import org.example.deboardv2.refactorrss.domain.RssPost;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 
 @Service
 @Slf4j
@@ -40,28 +41,28 @@ public class VelogRssParser implements RssParserStrategy {
     }
 
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl) {
+    public RssPost parse(SyndEntry entry) {
         return RssPost.builder()
                 .title(entry.getTitle())
                 .link(entry.getLink())
-                .author(extractVelogAuthor(feedUrl))
+                .author(extractVelogAuthor(entry.getLink()))
                 .content(getDescription(entry))
                 .publishedAt(convertToLocalDateTime(entry.getPublishedDate()))
                 .build();
     }
     private String extractVelogAuthor(String link) {
+        log.info("link {}", link);
         try {
             URI uri = new URI(link);
             String path = uri.getPath();  // 예: /rss/academey
             if (path == null) {
                 return "velog@unknown";
             }
-
             String[] segments = path.split("/");
-            String last = segments[segments.length - 1];
-
-            if (last != null && !last.isBlank()) {
-                return "velog@" + last;
+            String last = segments[1];
+            if (segments.length > 1 && segments[1].startsWith("@")) {
+                String authorId = segments[1].substring(1);  // @ 제거
+                return "velog@" + authorId;
             }
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

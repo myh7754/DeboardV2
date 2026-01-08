@@ -34,7 +34,6 @@ public enum ErrorCode {
 
     //
     DUPLICATED_FEED(HttpStatus.BAD_REQUEST, "중복된 피드 입니다."),
-    DUPLICATED_USER_FEED(HttpStatus.BAD_REQUEST, "중복된 유저 피드 입니다"),
     CONCURRENCY_FAILURE(HttpStatus.BAD_REQUEST, "동시성 오류입니다.");
 
     private final HttpStatus status;

@@ -13,18 +13,20 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class SarchServiceImpl implements SearchService {
-    private final PostCustomRepository postCustomRepository;
+//    private final PostCustomRepository postCustomRepository;
 
     @Override
     public Page<PostDetails> search(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return postCustomRepository.searchPost(pageable, searchType, search);
+//        Page<PostDetails> postDetails = postCustomRepository.searchPost(pageable, searchType, search);
+        return null;
     }
 
     @Override
     public Page<PostDetails> seardhLikePosts(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return postCustomRepository.searchLikePosts(pageable, searchType, search);
+//        Page<PostDetails> postDetails = postCustomRepository.searchLikePosts(pageable, searchType, search);
+        return null;
     }
 
 

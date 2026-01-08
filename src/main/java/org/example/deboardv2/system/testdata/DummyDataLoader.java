@@ -6,9 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.comment.repository.CommentsRepository;
 import org.example.deboardv2.likes.repository.LikesRepository;
 import org.example.deboardv2.post.repository.PostRepository;
-import org.example.deboardv2.rss.domain.Feed;
-import org.example.deboardv2.rss.service.AsyncRssService;
-import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,8 +29,8 @@ public class DummyDataLoader implements CommandLineRunner {
     private final EntityManager entityManager;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
-    private final RssService rssService;
-    private final AsyncRssService asyncRssService;
+//    private final RssService rssService;
+//    private final AsyncRssService asyncRssService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -44,9 +41,6 @@ public class DummyDataLoader implements CommandLineRunner {
             log.info("이미 user 데이터가 존재합니다 ({}명). 더미 데이터 삽입 건너뜀.", count);
             return;
         }
-
-        Feed feed = rssService.registerFeed("카카오 기술 블로그","tech.kakao.com/blog");
-        asyncRssService.processFeed(feed);
         int totalUsers = 3000; // 삽입할 유저 수
         log.info("더미 데이터 유저 {}건 삽입 시작...", totalUsers);
 
@@ -68,6 +62,9 @@ public class DummyDataLoader implements CommandLineRunner {
         );
 
         log.info("users {}명 데이터 삽입 완료!", totalUsers);
+
+        log.info("더미 데이터 userFeed 50건 삽입 시작...");
+        log.info("userFeed 50건 데이터 삽입 완료!");
 
         // Post 데이터도 동일한 방식으로 batch insert
         int total = 1_000_000;

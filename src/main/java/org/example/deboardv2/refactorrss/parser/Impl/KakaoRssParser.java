@@ -1,16 +1,15 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.refactorrss.parser.Impl;
 
-import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.rss.domain.RssPost;
-import org.example.deboardv2.rss.service.RssParserStrategy;
+import org.example.deboardv2.refactorrss.domain.RssPost;
+import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
+
 import org.jdom2.Element;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -33,12 +32,12 @@ public class KakaoRssParser implements RssParserStrategy {
     }
 
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl) {
-        return parse(entry, feedUrl,null);
+    public RssPost parse(SyndEntry entry) {
+        return parse(entry,null);
     }
 
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl, Element element) {
+    public RssPost parse(SyndEntry entry, Element element) {
         String image = extractThumbnail(element);
         return RssPost.builder()
                 .title(entry.getTitle())

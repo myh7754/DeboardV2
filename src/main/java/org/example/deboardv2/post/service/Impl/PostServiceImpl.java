@@ -7,10 +7,10 @@ import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
-import org.example.deboardv2.post.repository.PostCustomRepository;
+//import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.post.service.PostService;
-import org.example.deboardv2.rss.service.RssService;
+//import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.User;
@@ -22,21 +22,29 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PostServiceImpl implements PostService {
     public final UserService userService;
     public final PostRepository postRepository;
-    public final PostCustomRepository  postCustomRepository;
-    public final RssService rssService;
-
+//    public final PostCustomRepository  postCustomRepository;
+//    public final RssService rssService;
+//
     @Override
     @Transactional
     public PostDetails save(PostCreateDto post) {
         User user = userService.getCurrentUser();
         Post save = postRepository.save(Post.from(post, user));
         return PostDetails.from(save);
+    }
+
+    @Override
+    @Transactional
+    public void saveBatch(List<Post> posts) {
+        postRepository.saveAll(posts);
     }
 
     @Override
@@ -55,7 +63,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PostDetails getPostDtoById(Long postId) {
-        return postCustomRepository.getPostDetails(postId);
+//        postCustomRepository.getPostDetails(postId);
+        return null;
     }
 
 
@@ -63,13 +72,15 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public Page<PostDetails> readAll(int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
-        return postCustomRepository.findAll(pageable);
+//        Page<PostDetails> all = postCustomRepository.findAll(pageable);
+        return null;
     }
 
     @Override
     public Page<PostDetails> readLikesPosts(int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
-        return postCustomRepository.findLikesPosts(pageable);
+//        postCustomRepository.findLikesPosts(pageable);
+        return null;
     }
 
 

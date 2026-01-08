@@ -1,8 +1,8 @@
-package org.example.deboardv2.rss.service.Impl;
+package org.example.deboardv2.refactorrss.parser.Impl;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import org.example.deboardv2.rss.domain.RssPost;
-import org.example.deboardv2.rss.service.RssParserStrategy;
+import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
+import org.example.deboardv2.refactorrss.domain.RssPost;
 import org.jdom2.Element;
 import org.springframework.stereotype.Service;
 
@@ -38,12 +38,12 @@ public class NaverRssParser implements RssParserStrategy {
         return url;
     }
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl) {
-        return parse(entry, feedUrl, null);
+    public RssPost parse(SyndEntry entry) {
+        return parse(entry, null);
     }
 
     @Override
-    public RssPost parse(SyndEntry entry, String feedUrl, Element element) {
+    public RssPost parse(SyndEntry entry, Element element) {
         return RssPost.builder()
                 .title(entry.getTitle())
                 .link(entry.getLink())
