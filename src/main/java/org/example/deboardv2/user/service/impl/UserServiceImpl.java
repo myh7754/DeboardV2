@@ -47,6 +47,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User getCurrentUserReferenceById() {
+        Long currentUserId = getCurrentUserId();
+
+        return userRepository.getReferenceById(currentUserId);
+    }
+
+    @Override
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication.getPrincipal().equals("anonymousUser")) {

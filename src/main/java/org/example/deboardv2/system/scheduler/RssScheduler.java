@@ -2,21 +2,26 @@ package org.example.deboardv2.system.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.service.AsyncRssService;
+import org.example.deboardv2.rss.service.FeedService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RssScheduler {
-//    private final RssService rssService;
-//    private final AsyncRssService asyncRssService;
+    private final FeedService rssService;
+    private final AsyncRssService asyncRssService;
 
     @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
 //    @Scheduled(cron = "0 0/10 * * * *") // 10분마다 실행
 //    @Scheduled(fixedRate = 60_000) // 1분마다 실행
     public void fetchAllRssFeeds() throws Exception {
-//        List<Feed> feeds = rssService.getAllFeeds();
+        List<Feed> feeds = rssService.getAllFeeds();
 //        log.info("여기서 select? 4번발생?");
 //        // 피드의 개수만큼 select가 발생
 //        List<CompletableFuture> futures = new ArrayList<>();

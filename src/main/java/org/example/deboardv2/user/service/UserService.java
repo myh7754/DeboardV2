@@ -10,6 +10,7 @@ public interface UserService {
     public User getUserById(Long userId);
     public User getUserById(String email);
     public User getUserReferenceById(Long userId);
+    public User getCurrentUserReferenceById();
     public Long getCurrentUserId();
     public Optional<Long> getCurrentUserIdifExists();
     public String getCurrentUserNickname();

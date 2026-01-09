@@ -22,9 +22,10 @@ public class FeedController {
     public ResponseEntity<?> getAllFeeds() {
         return ResponseEntity.ok(null);
     }
-    @PostMapping("/user-feed")
-    public ResponseEntity<?> addUserFeed (@RequestParam String name, @RequestParam String url) {
 
+    @PostMapping("/user-feed")
+    public ResponseEntity<?> addUserFeed (@RequestParam String name, @RequestParam String url) throws Exception {
+        feedService.subscribeUserFeed(name, url);
         return ResponseEntity.ok().build();
     }
 
