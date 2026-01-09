@@ -1,4 +1,4 @@
-package org.example.deboardv2.refactorrss.service;
+package org.example.deboardv2.rss.service;
 
 import org.springframework.stereotype.Service;
 

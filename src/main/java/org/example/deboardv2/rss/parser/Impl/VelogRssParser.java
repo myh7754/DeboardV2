@@ -1,16 +1,15 @@
-package org.example.deboardv2.refactorrss.parser.Impl;
+package org.example.deboardv2.rss.parser.Impl;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
-import org.example.deboardv2.refactorrss.domain.RssPost;
+import org.example.deboardv2.rss.parser.RssParserStrategy;
+import org.example.deboardv2.rss.domain.RssPost;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
 
 @Service
 @Slf4j

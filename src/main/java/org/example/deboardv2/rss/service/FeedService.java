@@ -1,22 +1,15 @@
-package org.example.deboardv2.refactorrss.service;
+package org.example.deboardv2.rss.service;
 
-import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.feed.synd.SyndFeed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.post.entity.Post;
-import org.example.deboardv2.post.service.PostService;
-import org.example.deboardv2.refactorrss.domain.Feed;
-import org.example.deboardv2.refactorrss.domain.FeedType;
-import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
-import org.example.deboardv2.refactorrss.repository.FeedRepository;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.FeedType;
+import org.example.deboardv2.rss.parser.RssParserStrategy;
+import org.example.deboardv2.rss.repository.FeedRepository;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service

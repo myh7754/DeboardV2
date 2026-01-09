@@ -1,8 +1,9 @@
-package org.example.deboardv2.refactorrss.domain;
+package org.example.deboardv2.rss.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -16,5 +17,6 @@ public class RssPost {
     private String content;
     private String image;
     private LocalDateTime publishedAt;
+    private Feed feed;
 
 }

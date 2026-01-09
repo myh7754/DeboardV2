@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostUpdateDto;
-import org.example.deboardv2.refactorrss.domain.Feed;
+import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
@@ -58,7 +58,7 @@ public class Post extends BaseEntity {
     }
 
     public static Post fromRss(String title, String content,String image, String link,
-                               LocalDateTime createdAt, ExternalAuthor externalAuthor
+                               LocalDateTime createdAt, ExternalAuthor externalAuthor,Feed feed
 //            ,Feed feed, UserFeed userFeed
     ) {
         Post post = new Post();
@@ -68,7 +68,7 @@ public class Post extends BaseEntity {
         post.link = link;
         post.externalAuthor = externalAuthor;
         post.setCreatedAt(createdAt); // BaseEntity에 createdAt 필드 있을 경우 보호된 setter 사용
-//        post.feed = feed;
+        post.feed = feed;
 //        post.userFeed = userFeed;
         return post;
     }

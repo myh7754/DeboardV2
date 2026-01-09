@@ -1,4 +1,4 @@
-package org.example.deboardv2.refactorrss.service;
+package org.example.deboardv2.rss.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
-import org.example.deboardv2.refactorrss.domain.Feed;
-import org.example.deboardv2.refactorrss.domain.RssPost;
-import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.RssPost;
+import org.example.deboardv2.rss.parser.RssParserStrategy;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
 import org.springframework.stereotype.Service;
@@ -46,14 +46,14 @@ public class RssParserService {
         return newEntries;
     }
 
-    public List<Post> parseNewEntries (List<SyndEntry> entries, RssParserStrategy parser, String rssFeedUrl) throws Exception {
+    public List<Post> parseNewEntries (List<SyndEntry> entries, RssParserStrategy parser,Feed feed) throws Exception {
         if (entries == null || entries.isEmpty()) {
             return Collections.emptyList();
         }
         List<RssPost> rssPosts = convertToRssPosts(entries, parser);
 
         // 해당 feed에서 발행된 글의 글쓴이 만들어서 가져오기
-        Map<String, ExternalAuthor> authorMap = externalAuthorService.prepareAuthors(rssPosts, rssFeedUrl);
+        Map<String, ExternalAuthor> authorMap = externalAuthorService.prepareAuthors(rssPosts, feed.getFeedUrl());
 
         return rssPosts.stream()
                 .map(rssPost -> {
@@ -65,7 +65,8 @@ public class RssParserService {
                                 rssPost.getImage(),
                                 rssPost.getLink(),
                                 rssPost.getPublishedAt(),
-                                author
+                                author,
+                                feed
                         );
                     } catch (Exception e) {
                         throw new RuntimeException(e);

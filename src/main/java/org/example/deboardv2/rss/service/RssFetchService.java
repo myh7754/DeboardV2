@@ -1,4 +1,4 @@
-package org.example.deboardv2.refactorrss.service;
+package org.example.deboardv2.rss.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -7,9 +7,7 @@ import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import lombok.RequiredArgsConstructor;
 
-import org.example.deboardv2.refactorrss.domain.RssPost;
-import org.example.deboardv2.user.entity.ExternalAuthor;
-import org.example.deboardv2.user.repository.ExternalAuthorRepository;
+import org.example.deboardv2.rss.domain.RssPost;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.sax.XMLReaders;
@@ -18,8 +16,6 @@ import org.springframework.stereotype.Service;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

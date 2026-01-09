@@ -1,4 +1,4 @@
-package org.example.deboardv2.refactorrss.domain;
+package org.example.deboardv2.rss.domain;
 
 public enum FeedType {
     PUBLIC,

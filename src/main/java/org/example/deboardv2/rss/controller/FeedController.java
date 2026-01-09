@@ -1,32 +1,21 @@
-package org.example.deboardv2.refactorrss.controller;
+package org.example.deboardv2.rss.controller;
 
-import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.feed.synd.SyndFeed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.post.entity.Post;
-import org.example.deboardv2.post.service.PostService;
-import org.example.deboardv2.refactorrss.domain.Feed;
-import org.example.deboardv2.refactorrss.domain.FeedType;
-import org.example.deboardv2.refactorrss.domain.RssPost;
-import org.example.deboardv2.refactorrss.parser.RssParserStrategy;
-import org.example.deboardv2.refactorrss.service.FeedService;
-import org.example.deboardv2.refactorrss.service.RssFetchService;
-import org.example.deboardv2.refactorrss.service.RssParserService;
+import org.example.deboardv2.rss.service.FeedService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/rss")
 public class FeedController {
+    private final FeedService feedService;
 
     @PostMapping("/feed")
     public ResponseEntity<?> addFeed (@RequestParam String name, @RequestParam String url) throws Exception {
-
+        feedService.registerFeed(name, url);
         return ResponseEntity.ok().build();
     }
     @GetMapping("/feed")

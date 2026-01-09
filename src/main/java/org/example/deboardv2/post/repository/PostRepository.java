@@ -3,7 +3,7 @@ package org.example.deboardv2.post.repository;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.example.deboardv2.post.entity.Post;
-import org.example.deboardv2.refactorrss.domain.Feed;
+import org.example.deboardv2.rss.domain.Feed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

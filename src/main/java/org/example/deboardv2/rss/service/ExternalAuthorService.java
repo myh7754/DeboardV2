@@ -1,7 +1,7 @@
-package org.example.deboardv2.refactorrss.service;
+package org.example.deboardv2.rss.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.deboardv2.refactorrss.domain.RssPost;
+import org.example.deboardv2.rss.domain.RssPost;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
 import org.springframework.stereotype.Service;

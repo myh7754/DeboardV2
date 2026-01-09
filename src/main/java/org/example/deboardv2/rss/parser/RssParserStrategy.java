@@ -1,7 +1,7 @@
-package org.example.deboardv2.refactorrss.parser;
+package org.example.deboardv2.rss.parser;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import org.example.deboardv2.refactorrss.domain.RssPost;
+import org.example.deboardv2.rss.domain.RssPost;
 import org.jdom2.Element;
 
 

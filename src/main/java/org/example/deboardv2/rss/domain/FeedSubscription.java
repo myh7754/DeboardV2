@@ -1,4 +1,4 @@
-package org.example.deboardv2.refactorrss.domain;
+package org.example.deboardv2.rss.domain;
 
 import jakarta.persistence.*;
 import org.example.deboardv2.user.entity.User;
