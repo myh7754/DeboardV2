@@ -27,6 +27,6 @@ public class AsyncRssService {
         List<SyndEntry> newEntries = rssParserService.extractNewEntries(syndFeed, feed);
         List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser,feed);
         postService.saveBatch(rssPosts);
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 }
