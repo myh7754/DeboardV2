@@ -13,7 +13,7 @@ import java.util.concurrent.Executor;
 public class AsyncConfig {
 
     @Bean(name = "rssTaskExecutor")
-    public Executor rssTaskExcutor() {
+    public Executor rssTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 권장값 (환경에 따라 조정)
         executor.setCorePoolSize(6);    // 평소에는 적은 스레드로 자원 절약
@@ -25,7 +25,7 @@ public class AsyncConfig {
     }
 
     @Bean(name = "mailTaskExecutor")
-    public Executor mailTaskExcutor() {
+    public Executor mailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(3);
         executor.setMaxPoolSize(10);
