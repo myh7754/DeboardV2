@@ -3,6 +3,7 @@ package org.example.deboardv2.rss.domain;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.deboardv2.user.entity.User;
 
@@ -10,6 +11,7 @@ import org.example.deboardv2.user.entity.User;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
 public class FeedSubscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

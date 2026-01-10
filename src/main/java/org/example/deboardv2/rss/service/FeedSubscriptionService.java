@@ -15,4 +15,5 @@ public class FeedSubscriptionService {
     public void registerFeedSubscription(FeedSubscription subscription) {
         subscriptionRepository.save(subscription);
     }
+
 }

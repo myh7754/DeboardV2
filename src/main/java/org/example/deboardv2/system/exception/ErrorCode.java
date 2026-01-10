@@ -32,7 +32,8 @@ public enum ErrorCode {
     //comment
     COMMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 댓글을 찾을 수 없습니다"),
 
-    //
+    //feed
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.BAD_REQUEST, "구독하지 않은 피드입니다"),
     DUPLICATED_FEED(HttpStatus.BAD_REQUEST, "중복된 피드 입니다."),
     CONCURRENCY_FAILURE(HttpStatus.BAD_REQUEST, "동시성 오류입니다."),
 

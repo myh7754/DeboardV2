@@ -31,7 +31,13 @@ public class FeedController {
 
     @GetMapping("/user-feed")
     public ResponseEntity<?> getAllUserFeeds() {
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(feedService.getUserSubscriptions());
+    }
+
+    @DeleteMapping("/user-feed/{id}")
+    public ResponseEntity<?> deleteUserFeed(@PathVariable Long id) throws Exception {
+        feedService.unsubscribe(id);
+        return ResponseEntity.ok().build();
     }
 
 }

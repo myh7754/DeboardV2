@@ -42,4 +42,6 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Post p WHERE p.id = :postId")
     Optional<Post> findByIdForUpdate(@Param("postId") Long postId);
+
+    void deleteByFeed(Feed feed);
 }

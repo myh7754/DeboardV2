@@ -2,9 +2,11 @@ package org.example.deboardv2.rss.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.FeedSubscription;
 import org.example.deboardv2.rss.domain.FeedType;
+import org.example.deboardv2.rss.dto.UserFeedDto;
 import org.example.deboardv2.rss.parser.RssParserStrategy;
 import org.example.deboardv2.rss.repository.FeedRepository;
 import org.example.deboardv2.rss.repository.FeedSubscriptionRepository;
@@ -26,6 +28,7 @@ public class FeedService {
     private final AsyncRssService asyncRssService;
     private final UserService userService;
     private final FeedSubscriptionRepository feedSubscriptionRepository;
+    private final PostRepository postRepository;
 
     @Transactional
     public Feed registerFeed(String name, String url) throws Exception {
@@ -79,6 +82,41 @@ public class FeedService {
                                 .feedType(FeedType.PRIVATE)
                                 .build()
                 ));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserFeedDto> getUserSubscriptions() {
+        User user = userService.getCurrentUserReferenceById();
+        return feedSubscriptionRepository.findAllByUser(user).stream()
+                .map(sub -> new UserFeedDto(
+                        sub.getId(),            // Subscription의 ID (삭제 시 사용)
+                        sub.getCustomName(),    // 유저가 지정한 이름
+                        sub.getFeed().getFeedUrl()
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public void unsubscribe(Long id) throws Exception {
+        User user = userService.getCurrentUserReferenceById();
+        FeedSubscription subscription = feedSubscriptionRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
+
+        Feed feed = subscription.getFeed();
+        // 본인 확인: 다른 사람이 내 구독 정보를 지우면 안됨
+        if (!subscription.getUser().getId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        feedSubscriptionRepository.delete(subscription);
+
+        if (feed.getFeedType().equals(FeedType.PRIVATE) &&
+            !feedSubscriptionRepository.existsByFeed(feed)) {
+            log.info("피드 확인 {}", feed.getId());
+            postRepository.deleteByFeed(feed);
+            feedRepository.delete(feed);
+        }
+
     }
 }
 
