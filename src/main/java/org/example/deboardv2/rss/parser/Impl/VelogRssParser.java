@@ -50,7 +50,6 @@ public class VelogRssParser implements RssParserStrategy {
                 .build();
     }
     private String extractVelogAuthor(String link) {
-        log.info("link {}", link);
         try {
             URI uri = new URI(link);
             String path = uri.getPath();  // 예: /rss/academey

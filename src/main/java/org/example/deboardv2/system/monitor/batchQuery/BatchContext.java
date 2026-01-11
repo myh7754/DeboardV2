@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Getter
@@ -17,7 +18,7 @@ import java.util.Map;
 public class BatchContext {
     private final BatchName batchName;
     private final LocalDateTime startTime;
-    private final Map<QueryType, Integer> queryCountByType = new HashMap<>();
+    private final Map<QueryType, Integer> queryCountByType = new ConcurrentHashMap<>();
 
     // SQL 실행 시 호출 → QueryType별 카운트 증가
     public void incrementQueryCount(String sql) {

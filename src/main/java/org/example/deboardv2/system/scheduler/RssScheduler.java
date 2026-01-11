@@ -22,7 +22,7 @@ public class RssScheduler {
     private final AsyncRssService asyncRssService;
 
 //    @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
-    @Scheduled(cron = "0 0/10 * * * *") // 10분마다 실행
+    @Scheduled(cron = "0 0/5 * * * *") // 5분마다 실행
 //    @Scheduled(fixedRate = 60_000) // 1분마다 실행
     public void fetchAllRssFeeds() throws Exception {
         List<Feed> allFeeds = feedService.getAllFeeds();
