@@ -63,8 +63,32 @@ public class DummyDataLoader implements CommandLineRunner {
 
         log.info("users {}명 데이터 삽입 완료!", totalUsers);
 
-        log.info("더미 데이터 userFeed 50건 삽입 시작...");
-        log.info("userFeed 50건 데이터 삽입 완료!");
+        log.info("더미 데이터 userFeed 100건 삽입 시작...");
+        // 1. 테스트용 공통 Feed 생성 (영훈 블로그)
+        String feedUrl = "https://myh7754.tistory.com/rss";
+        String siteName = "영훈블로그";
+        jdbcTemplate.update(
+                "INSERT INTO feed (site_name, feed_url, feed_type) VALUES (?, ?, ?)",
+                siteName, feedUrl, "PRIVATE" // Enum이 String으로 저장되는 경우
+        );
+        Long feedId = jdbcTemplate.queryForObject(
+                "SELECT id FROM feed WHERE feed_url = ?", Long.class, feedUrl);
+        List<Object[]> subscriptionBatch = new ArrayList<>();
+        for (long userId = 1; userId <= 100; userId++) {
+            subscriptionBatch.add(new Object[]{
+                    siteName, // customName
+                    feedId,   // feed_id
+                    userId    // user_id
+            });
+        }
+
+        // batchUpdate를 사용하여 100건을 한 번에 삽입
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO feed_subscription (custom_name, feed_id, user_id) VALUES (?, ?, ?)",
+                subscriptionBatch
+        );
+
+        log.info("유저 100명의 구독 데이터(FeedSubscription) 삽입 완료! (대상 Feed ID: {})", feedId);
 
         // Post 데이터도 동일한 방식으로 batch insert
         int total = 1_000_000;

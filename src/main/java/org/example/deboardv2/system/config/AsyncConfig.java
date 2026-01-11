@@ -1,6 +1,7 @@
 package org.example.deboardv2.system.config;
 
 
+import org.example.deboardv2.system.monitor.sechdulermonitor.ContextCopyTaskDecorator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -20,6 +21,7 @@ public class AsyncConfig {
         executor.setMaxPoolSize(20);    // 트래픽 급증 시 빠르게 확장 가능
         executor.setQueueCapacity(200); // 대기열을 얼마나 세울지
         executor.setThreadNamePrefix("rss-exec-");
+        executor.setTaskDecorator(new ContextCopyTaskDecorator());
         executor.initialize();
         return executor;
     }

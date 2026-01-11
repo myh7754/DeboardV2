@@ -33,10 +33,9 @@ public class RssScheduler {
             futures.add(future);
         }
 
-        // 모든 작업이 완료될 때까지 대기하는 "통합 관리자" 생성
-        CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-
         try {
+            // 모든 작업이 완료될 때까지 대기하는 "통합 관리자" 생성
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
             // 최대 10분간 모든 작업이 끝나길 기다림
             allOf.get(10, TimeUnit.MINUTES);
             log.info("모든 RSS 수집 작업이 성공적으로 완료되었습니다.");

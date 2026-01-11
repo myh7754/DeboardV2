@@ -12,14 +12,17 @@ import org.example.deboardv2.user.entity.User;
 @NoArgsConstructor
 @Builder
 @Getter
+@Table(name = "feed_subscription")
 public class FeedSubscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String customName;
     @ManyToOne
+    @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
     @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
 }
