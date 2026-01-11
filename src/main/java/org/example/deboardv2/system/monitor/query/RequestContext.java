@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @AllArgsConstructor
@@ -13,7 +13,7 @@ import java.util.Map;
 public class RequestContext {
     private String httpMethod;
     private String path;
-    private final Map<QueryType, Integer> queryCountsType = new HashMap<>();
+    private final Map<QueryType, Integer> queryCountsType = new ConcurrentHashMap<>();
 
     //  SQL 실행 시 호출 → QueryType별 카운트 증가
     public void incrementQueryCount(String sql) {

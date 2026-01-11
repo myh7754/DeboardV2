@@ -69,9 +69,30 @@ public class DummyDataLoader implements CommandLineRunner {
 
         log.info("users {}명 데이터 삽입 완료!", totalUsers);
 
+        log.info("유저 1~100 대상 UserFeed 데이터 삽입 시작...");
+
+        List<Object[]> userFeedBatch = new ArrayList<>();
+        String feedUrl = "https://myh7754.tistory.com/rss";
+        String siteName = "영훈 티스토리";
+
+        for (long i = 1; i <= 100; i++) {
+            userFeedBatch.add(new Object[]{
+                    i,         // user_id (1~100)
+                    feedUrl,   // feed_url
+                    siteName   // site_name
+            });
+        }
+
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO user_feed (user_id, feed_url, site_name) VALUES (?, ?, ?)",
+                userFeedBatch
+        );
+
+        log.info("UserFeed 100건 삽입 완료!");
+
         // Post 데이터도 동일한 방식으로 batch insert
         int total = 1_000_000;
-        int batchSize = 5000;
+        int batchSize = 100000;
 
         log.info("더미 데이터 post {}건 삽입 시작...", total);
 
