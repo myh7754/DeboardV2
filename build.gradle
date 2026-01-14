@@ -71,6 +71,9 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework:spring-aspects'
 
+    // 모든 dataSource의 쿼리 발생시 처리를 가능하게 해주는 라이브러리
+    implementation 'net.ttddyy:datasource-proxy:1.11.0'
+
 }
 
 tasks.named('test') {

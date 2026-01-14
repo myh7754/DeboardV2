@@ -19,7 +19,7 @@ public abstract class BaseEntity {
     private LocalDateTime createdAt;
 
 //    @LastModifiedDate
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
 
     @PrePersist

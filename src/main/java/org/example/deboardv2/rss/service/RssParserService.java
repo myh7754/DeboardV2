@@ -98,6 +98,7 @@ public class RssParserService {
                 .collect(Collectors.toList());
         // 이거 나중에 캐시로 변경
         // 중복 필터링
+        log.info("게시글 중복 필터링하기위해 feed로 전부 조회 {}", dtoFeed.getFeedUrl());
         Set<String> existingLinksByFeed = postRepository.findExistingLinksByFeed(dtoFeed, entriesLinks);
         return entries.stream()
                 .filter(entry -> !existingLinksByFeed.contains(entry.getLink()))

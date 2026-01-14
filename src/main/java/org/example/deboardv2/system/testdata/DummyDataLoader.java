@@ -69,7 +69,14 @@ public class DummyDataLoader implements CommandLineRunner {
                 {"개발 놀이터", "https://coding-review.tistory.com", "PRIVATE"},
                 {"딩코딩코", "https://velog.io/@academey/posts", "PRIVATE"},
                 {"카카오기술블로그", "https://tech.kakao.com/blog", "PUBLIC"},
-                {"우아한형제들 기술블로그", "https://techblog.woowahan.com/", "PUBLIC"}
+                {"우아한형제들 기술블로그", "https://techblog.woowahan.com/", "PUBLIC"},
+                {"기억보단 기록을", "https://jojoldu.tistory.com/", "PRIVATE"},
+                {"블로그1", "https://lsdiary.tistory.com/", "PRIVATE"},
+                {"블로그2", "https://liberal-arts-developer.tistory.com/", "PRIVATE"},
+                {"블로그3", "https://velog.io/@heoseungyeon/posts", "PRIVATE"},
+                {"블로그4", "https://youwjune.tistory.com/",  "PRIVATE"}
+
+
         };
         for (String[] feedInfo : feedsToInsert) {
             String originalUrl = feedInfo[1];
@@ -90,7 +97,12 @@ public class DummyDataLoader implements CommandLineRunner {
                 "https://myh7754.tistory.com",
                 "https://mangkyu.tistory.com",
                 "https://coding-review.tistory.com",
-                "https://velog.io/@academey/posts"
+                "https://velog.io/@academey/posts",
+                "https://jojoldu.tistory.com/",
+                "https://lsdiary.tistory.com/",
+                "https://liberal-arts-developer.tistory.com/",
+                "https://velog.io/@heoseungyeon/posts",
+                "https://youwjune.tistory.com/"
         };
 
         for (String url : targetFeedUrls) {

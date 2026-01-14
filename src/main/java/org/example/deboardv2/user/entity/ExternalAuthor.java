@@ -14,9 +14,9 @@ public class ExternalAuthor {
     private String sourceUrl;
 
     // 어떤 유저가 등록했는가
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_user_id")
-    private User ownerUserId;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "owner_user_id")
+//    private User ownerUserId;
 
     public void update(String name, String sourceUrl) {
         this.name = name;

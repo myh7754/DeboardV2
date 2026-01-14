@@ -9,6 +9,7 @@ import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
 //import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostCustomRepository;
+import org.example.deboardv2.post.repository.PostJdbcRepository;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.post.service.PostService;
 //import org.example.deboardv2.rss.service.RssService;
@@ -32,6 +33,7 @@ public class PostServiceImpl implements PostService {
     public final UserService userService;
     public final PostRepository postRepository;
     public final PostCustomRepository postCustomRepository;
+    public final PostJdbcRepository postJdbcRepository;
 //    public final RssService rssService;
 //
     @Override
@@ -45,7 +47,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void saveBatch(List<Post> posts) {
-        postRepository.saveAll(posts);
+        postJdbcRepository.saveBatch(posts);
+//        postRepository.saveAll(posts);
     }
 
     @Override

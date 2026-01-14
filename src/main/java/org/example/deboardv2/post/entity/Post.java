@@ -59,7 +59,6 @@ public class Post extends BaseEntity {
 
     public static Post fromRss(String title, String content,String image, String link,
                                LocalDateTime createdAt, ExternalAuthor externalAuthor,Feed feed
-//            ,Feed feed, UserFeed userFeed
     ) {
         Post post = new Post();
         post.title = title;
@@ -69,7 +68,6 @@ public class Post extends BaseEntity {
         post.externalAuthor = externalAuthor;
         post.setCreatedAt(createdAt); // BaseEntity에 createdAt 필드 있을 경우 보호된 setter 사용
         post.feed = feed;
-//        post.userFeed = userFeed;
         return post;
     }
 
