@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 public class ExternalAuthor {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter
     private Long id;
     private String name;
     private String sourceUrl;

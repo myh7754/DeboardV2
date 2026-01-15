@@ -40,7 +40,6 @@ public class ExternalAuthorService {
 
     // 이미 존재하는 작가들은 캐시로 사용하기 위해 Map로 불러옴
     private Map<String, ExternalAuthor> findExistingAuthors(Set<String> authorNames, String rssFeedUrl) {
-        log.info("작가들 불러오기 어떤피드의 작가들? {}", rssFeedUrl);
         return externalAuthorRepository.findAllByNameInAndSourceUrl(authorNames,rssFeedUrl)
                 .stream()
                 .collect(Collectors.toMap(ExternalAuthor::getName, a -> a));
