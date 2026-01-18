@@ -74,9 +74,49 @@ public class DummyDataLoader implements CommandLineRunner {
                 {"블로그1", "https://lsdiary.tistory.com/", "PRIVATE"},
                 {"블로그2", "https://liberal-arts-developer.tistory.com/", "PRIVATE"},
                 {"블로그3", "https://velog.io/@heoseungyeon/posts", "PRIVATE"},
-                {"블로그4", "https://youwjune.tistory.com/",  "PRIVATE"}
+                {"블로그4", "https://youwjune.tistory.com/",  "PRIVATE"},
 
-
+                // 추가 데이터
+                {"중년금융생활", "https://middleage-finance-life.tistory.com/", "PRIVATE"},
+                {"Labeled", "https://labeled.tistory.com/", "PRIVATE"},
+                {"Today Trip", "https://todaytrip.tistory.com/", "PRIVATE"},
+                {"Dush12", "https://dush12.tistory.com/", "PRIVATE"},
+                {"Mountain59", "https://mountain59.tistory.com/", "PRIVATE"},
+                {"Ribi", "https://ribi.tistory.com/", "PRIVATE"},
+                {"Choeseunggu", "https://choeseunggu.tistory.com/", "PRIVATE"},
+                {"희희네 티타임", "https://heeheene-tea.tistory.com/", "PRIVATE"},
+                {"Dreamer418", "https://dreamer418.tistory.com/", "PRIVATE"},
+                {"Noneo", "https://noneo.tistory.com/", "PRIVATE"},
+                {"크립토스토리", "https://cryptostory1217.tistory.com/", "PRIVATE"},
+                {"PatchPink", "https://patchpink0000.tistory.com/", "PRIVATE"},
+                {"Riverive", "https://riverive.tistory.com/", "PRIVATE"},
+                {"Stedi", "https://stedi.tistory.com/", "PRIVATE"},
+                {"Wezard4u", "https://wezard4u.tistory.com/", "PRIVATE"},
+                {"원당컴", "https://wondangcom.tistory.com/", "PRIVATE"},
+                {"Chounsoon788", "https://chounsoon788.tistory.com/", "PRIVATE"},
+                {"맞쟁이", "https://majjaeng.tistory.com/", "PRIVATE"},
+                {"Ejssdaddy", "https://ejssdaddy.tistory.com/", "PRIVATE"},
+                {"Tutoria", "https://tutoria.tistory.com/", "PRIVATE"},
+                {"RT Model", "https://rtmodel.tistory.com/", "PRIVATE"},
+                {"Chef Choice", "https://chef-choice.tistory.com/", "PRIVATE"},
+                {"Stephinwien", "https://stephinwien.tistory.com/", "PRIVATE"},
+                {"Yeongk2813", "https://yeongk2813.tistory.com/", "PRIVATE"},
+                {"Lubi Happy", "https://lubi-happy.tistory.com/", "PRIVATE"},
+                {"Sweet Basil", "https://asweetbasil.tistory.com/", "PRIVATE"},
+                {"Lovely Days", "https://lovely-days.tistory.com/", "PRIVATE"},
+                {"Tallpike", "https://tallpike.tistory.com/", "PRIVATE"},
+                {"Mingky Hyung-a", "https://mingky-hyung-a.tistory.com/", "PRIVATE"},
+                {"Start of Trip", "https://start-of-trip.tistory.com/", "PRIVATE"},
+                {"Jyshine24", "https://jyshine24.tistory.com/", "PRIVATE"},
+                {"Shy Review", "https://shyreviewdiary.tistory.com/", "PRIVATE"},
+                {"Pms46", "https://pms46.tistory.com/", "PRIVATE"},
+                {"Ainiesta8", "https://ainiesta8.tistory.com/", "PRIVATE"},
+                {"Feeling Look", "https://feelinglook.tistory.com/", "PRIVATE"},
+                {"Jongamk", "https://jongamk.tistory.com/", "PRIVATE"},
+                {"RGY0409", "https://rgy0409.tistory.com/", "PRIVATE"},
+                {"Gooseskin", "https://gooseskin.tistory.com/", "PRIVATE"},
+                {"Dhsrkwrjt", "https://dhsrkwrjt.tistory.com/", "PRIVATE"},
+                {"Lim826bk", "https://lim826bk.tistory.com/", "PRIVATE"}
         };
         for (String[] feedInfo : feedsToInsert) {
             String originalUrl = feedInfo[1];
@@ -102,7 +142,49 @@ public class DummyDataLoader implements CommandLineRunner {
                 "https://lsdiary.tistory.com/",
                 "https://liberal-arts-developer.tistory.com/",
                 "https://velog.io/@heoseungyeon/posts",
-                "https://youwjune.tistory.com/"
+                "https://youwjune.tistory.com/",
+
+                "https://middleage-finance-life.tistory.com/",
+                "https://labeled.tistory.com/",
+                "https://todaytrip.tistory.com/",
+                "https://dush12.tistory.com/",
+                "https://mountain59.tistory.com/",
+                "https://ribi.tistory.com/",
+                "https://choeseunggu.tistory.com/",
+                "https://heeheene-tea.tistory.com/",
+                "https://dreamer418.tistory.com/",
+                "https://noneo.tistory.com/",
+                "https://cryptostory1217.tistory.com/",
+                "https://patchpink0000.tistory.com/",
+                "https://riverive.tistory.com/",
+                "https://stedi.tistory.com/",
+                "https://wezard4u.tistory.com/",
+                "https://wondangcom.tistory.com/",
+                "https://chounsoon788.tistory.com/",
+                "https://majjaeng.tistory.com/",
+                "https://ejssdaddy.tistory.com/",
+                "https://tutoria.tistory.com/",
+                "https://rtmodel.tistory.com/",
+                "https://chef-choice.tistory.com/",
+                "https://stephinwien.tistory.com/",
+                "https://yeongk2813.tistory.com/",
+                "https://lubi-happy.tistory.com/",
+                "https://asweetbasil.tistory.com/",
+                "https://lovely-days.tistory.com/",
+                "https://tallpike.tistory.com/",
+                "https://mingky-hyung-a.tistory.com/",
+                "https://start-of-trip.tistory.com/",
+                "https://jyshine24.tistory.com/",
+                "https://shyreviewdiary.tistory.com/",
+                "https://pms46.tistory.com/",
+                "https://ainiesta8.tistory.com/",
+                "https://feelinglook.tistory.com/",
+                "https://jongamk.tistory.com/",
+                "https://rgy0409.tistory.com/",
+                "https://gooseskin.tistory.com/",
+                "https://dhsrkwrjt.tistory.com/",
+                "https://lim826bk.tistory.com/"
+
         };
 
         for (String url : targetFeedUrls) {
@@ -140,7 +222,7 @@ public class DummyDataLoader implements CommandLineRunner {
 
 
         // Post 데이터도 동일한 방식으로 batch insert
-        int total = 1_000_000;
+        int total = 100_000;
         int batchSize = 5000;
 
         log.info("더미 데이터 post {}건 삽입 시작...", total);

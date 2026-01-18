@@ -50,7 +50,7 @@ public class FeedService {
 
     @Transactional(readOnly = true)
     public List<Feed> getAllFeeds() {
-        return feedRepository.findAll();
+        return feedRepository.findAllByIsActiveTrue();
     }
 
     @Transactional
@@ -117,6 +117,13 @@ public class FeedService {
             feedRepository.delete(feed);
         }
 
+    }
+
+    @Transactional
+    public void disableFeeds(List<Long> failedIds) {
+        if (failedIds != null && !failedIds.isEmpty()) {
+            feedRepository.disableFeedsByIds(failedIds);
+        }
     }
 }
 

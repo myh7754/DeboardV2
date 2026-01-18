@@ -1,4 +1,4 @@
-package org.example.deboardv2.system.monitor.sechdulermonitor;
+package org.example.deboardv2.system.monitor.schedulermonitor;
 
 import org.example.deboardv2.system.monitor.query.RequestContext;
 import org.example.deboardv2.system.monitor.query.RequestContextHolder;

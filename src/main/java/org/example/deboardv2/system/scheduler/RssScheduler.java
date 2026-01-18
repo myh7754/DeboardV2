@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -26,18 +27,29 @@ public class RssScheduler {
 //    @Scheduled(fixedRate = 60_000) // 1분마다 실행
     public void fetchAllRssFeeds() throws Exception {
         List<Feed> allFeeds = feedService.getAllFeeds();
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        List<CompletableFuture<Long>> futures = new ArrayList<>();
         for (Feed feed : allFeeds) {
             // 비동기로 피드별 수집 작업 던지기
-            CompletableFuture<Void> future = asyncRssService.collectAndSavePosts(feed);
+            CompletableFuture<Long> future = asyncRssService.collectAndSavePosts(feed);
             futures.add(future);
         }
 
         try {
             // 모든 작업이 완료될 때까지 대기하는 "통합 관리자" 생성
             CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
             // 최대 10분간 모든 작업이 끝나길 기다림
             allOf.get(10, TimeUnit.MINUTES);
+            // 3. 404 에러 등으로 실패한 ID 리스트 추출
+            List<Long> failedIds = futures.stream()
+                    .map(f -> f.join())
+                    .filter(Objects::nonNull)
+                    .toList();
+            // 4. 실패한 피드들을 한 번에 비활성화 처리
+            if (!failedIds.isEmpty()) {
+                feedService.disableFeeds(failedIds);
+                log.info("{} 개의 피드를 비활성화 처리했습니다.", failedIds.size());
+            }
             log.info("모든 RSS 수집 작업이 성공적으로 완료되었습니다.");
         } catch (TimeoutException e) {
             log.warn("일부 RSS 작업이 10분 안에 완료되지 않았습니다 (타임아웃).");

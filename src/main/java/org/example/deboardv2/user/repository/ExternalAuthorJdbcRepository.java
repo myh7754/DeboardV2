@@ -21,24 +21,9 @@ import java.util.Map;
 public class ExternalAuthorJdbcRepository {
     private final JdbcTemplate jdbcTemplate;
     private final ExternalAuthorRepository externalAuthorRepository;
-
+//
     @Transactional
     public List<ExternalAuthor> saveBatch(List<ExternalAuthor> authorList) {
-//        String sql = "INSERT INTO external_author (name, source_url) VALUES (?, ?)";
-//        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
-//
-//            @Override
-//            public void setValues(PreparedStatement ps, int i) throws SQLException {
-//                ps.setString(1, authorList.get(i).getName());
-//                ps.setString(2, authorList.get(i).getSourceUrl());
-//            }
-//
-//            @Override
-//            public int getBatchSize() {
-//                return authorList.size();
-//            }
-//        });
-//        return authorList;
         String sql = "INSERT INTO external_author (name, source_url) VALUES (?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -69,11 +54,10 @@ public class ExternalAuthorJdbcRepository {
 
         return authorList;
     }
+
 //    @Transactional
 //    public List<ExternalAuthor> saveBatch(List<ExternalAuthor> lists) {
 //        return externalAuthorRepository.saveAll(lists);
 //    }
-
-
 
 }

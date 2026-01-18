@@ -44,4 +44,5 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     Optional<Post> findByIdForUpdate(@Param("postId") Long postId);
 
     void deleteByFeed(Feed feed);
+
 }

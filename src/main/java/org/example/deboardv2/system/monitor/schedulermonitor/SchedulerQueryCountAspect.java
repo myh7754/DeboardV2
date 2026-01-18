@@ -1,4 +1,4 @@
-package org.example.deboardv2.system.monitor.sechdulermonitor;
+package org.example.deboardv2.system.monitor.schedulermonitor;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;

@@ -1,6 +1,7 @@
 package org.example.deboardv2.redis.service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 
 public interface RedisService {
@@ -28,4 +29,14 @@ public interface RedisService {
     // unit : 시간 단위 TimeUnit.SECONDS, TimeUnit.MINUTES 등
     void setValueWithExpire(String key, Object value, Duration expireTime);
 
+    // Set에 값 추가 및 만료시간 설정 (중복 체크용)
+    void addToSet(String key, String value, int i);
+
+    // Set에 특정 값이 있는지 확인
+    boolean isMemberOfSet(String key, String value);
+
+    Set<String> getAllFromZSet(String key);
+    void addAllToZSet(String key, List<String> value, int maxSize);
+
+    List<Boolean> checkLinksExistence(String key, List<String> links);
 }

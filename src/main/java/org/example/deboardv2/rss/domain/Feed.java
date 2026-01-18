@@ -19,5 +19,8 @@ public class Feed {
     private String feedUrl;
     @Enumerated(EnumType.STRING)
     private FeedType feedType;
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private boolean isActive = true;
 
 }
