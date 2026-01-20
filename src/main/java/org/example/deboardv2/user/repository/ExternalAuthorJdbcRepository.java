@@ -21,7 +21,7 @@ import java.util.Map;
 public class ExternalAuthorJdbcRepository {
     private final JdbcTemplate jdbcTemplate;
     private final ExternalAuthorRepository externalAuthorRepository;
-//
+
     @Transactional
     public List<ExternalAuthor> saveBatch(List<ExternalAuthor> authorList) {
         String sql = "INSERT INTO external_author (name, source_url) VALUES (?, ?)";

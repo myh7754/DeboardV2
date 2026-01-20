@@ -26,38 +26,37 @@ public class AsyncRssService {
     private final PostService postService;
     private final RedisService redisService;
 
+    private final Semaphore semaphore = new Semaphore(100);
+
     @Async("rssTaskExecutor")
     public CompletableFuture<Long> collectAndSavePosts(Feed feed) throws Exception {
+        semaphore.acquire();
         try {
-            // 측정 시작
-            long startTime = System.currentTimeMillis();
             RssParserStrategy selectParser = rssParserService.selectParser(feed.getFeedUrl());
             SyndFeed syndFeed = rssFetchService.fetchSyndFeed(feed.getFeedUrl());
-            // 측정 종료
-            long endTime = System.currentTimeMillis();
-            log.info("RSS Fetch Time ({}): {}ms", feed.getFeedUrl(), (endTime - startTime));
 
             List<SyndEntry> newEntries = rssParserService.extractNewEntries(syndFeed, feed);
-            List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser, feed);
-            postService.saveBatch(rssPosts);
-
-            long startTime2 = System.currentTimeMillis();
-            String key = "rss:feed:" + feed.getId();
-            List<String> linksToCache = rssPosts.stream()
-                    .map(Post::getLink)
-                    .toList();
-            if (!linksToCache.isEmpty()) {
-                redisService.addAllToZSet(key, linksToCache, 50);
+            if (!newEntries.isEmpty()) {
+                List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser, feed);
+                postService.saveBatch(rssPosts);
+                String key = "rss:feed:" + feed.getId();
+                List<String> linksToCache = rssPosts.stream()
+                        .map(Post::getLink)
+                        .toList();
+                if (!linksToCache.isEmpty()) {
+                    redisService.addAllToZSet(key, linksToCache, 50);
+                }
             }
-            log.info("피드 저장 및 캐시 갱신 완료: {}, 저장된 개수: {}", feed.getFeedUrl(), rssPosts.size());
 
-            long endTime2 = System.currentTimeMillis();
-            log.info("redis 저장 속도결과 : {}ms", (endTime2 - startTime2));
+//            log.info("피드 저장 및 캐시 갱신 완료: {}, 저장된 개수: {}", feed.getFeedUrl(), rssPosts.size());
+
         } catch (java.io.FileNotFoundException e) {
             log.error("피드 주소를 찾을 수 없습니다 (404): {}", feed.getFeedUrl());
             return CompletableFuture.completedFuture(feed.getId());
         } catch (Exception e) {
             log.error("RSS 수집 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+        } finally {
+            semaphore.release(); // 허가 반납
         }
         return CompletableFuture.completedFuture(null);
     }

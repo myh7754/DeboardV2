@@ -44,11 +44,7 @@ public class RssParserService {
     // 새로 갱신된 게시글들만 추출
     public List<SyndEntry> extractNewEntries(SyndFeed feed, Feed dtoFeed) {
         List<SyndEntry> entries = feed.getEntries();
-        // 측정 시작
-        long startTime = System.currentTimeMillis();
         List<SyndEntry> newEntries = extractPostListImprove(dtoFeed, entries);
-        long endTime = System.currentTimeMillis();
-        log.info("extractPostList : {}ms", (endTime - startTime));
         return newEntries;
     }
 
@@ -99,8 +95,6 @@ public class RssParserService {
     // 중복된 게시글을 필터링
     @Transactional(readOnly = true)
     public List<SyndEntry> extractPostList(Feed dtoFeed, List<SyndEntry> entries) {
-
-
         List<String> entriesLinks = entries.stream()
                         .map(SyndEntry::getLink)
                         .collect(Collectors.toList());
@@ -117,26 +111,24 @@ public class RssParserService {
 
     @Transactional(readOnly = true)
     public List<SyndEntry> extractPostListImprove(Feed dtoFeed, List<SyndEntry> entries) {
+
         String key = "rss:feed:" + dtoFeed.getId();
         List<String> links = entries.stream()
                         .map(SyndEntry::getLink)
                         .toList();
-        List<Boolean> existenceList = redisService.checkLinksExistence(key, links);
+        if (!redisService.hasKey(key)) {
+            Set<String> alreadyInDb = postRepository.findExistingLinksByFeed(dtoFeed, links);
+            return entries.stream()
+                    .filter(e -> !alreadyInDb.contains(e.getLink()))
+                    .collect(Collectors.toList());
+        }
 
+        List<Boolean> existenceList = redisService.checkLinksExistence(key, links);
         List<SyndEntry> newEntries = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
             if (!existenceList.get(i)) {
                 newEntries.add(entries.get(i));
             }
-        }
-
-//        Redis가 비었을 때만 DB를 백업으로 확인합니다.
-        if (newEntries.size() == entries.size()) {
-            Set<String> alreadyInDb = postRepository.findExistingLinksByFeed(dtoFeed, links);
-            log.info("레디스 키 만료 조회 발생");
-            return newEntries.stream()
-                    .filter(e -> !alreadyInDb.contains(e.getLink()))
-                    .collect(Collectors.toList());
         }
         return newEntries;
     }
