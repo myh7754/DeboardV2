@@ -17,16 +17,24 @@ import java.util.concurrent.Semaphore;
 public class AsyncConfig {
     @Bean(name = "rssTaskExecutor")
     public Executor rssTaskExecutor() {
-//        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-//        // 권장값 (환경에 따라 조정)
-//        executor.setCorePoolSize(6);    // 평소에는 적은 스레드로 자원 절약
-//        executor.setMaxPoolSize(40);    // 트래픽 급증 시 빠르게 확장 가능
-//        executor.setQueueCapacity(40); // 대기열을 얼마나 세울지
-//        executor.setThreadNamePrefix("rss-exec-");
-//        executor.setTaskDecorator(new ContextCopyTaskDecorator());
-//        executor.initialize();
-//        return executor;
-//      // 1. Spring에서 제공하는 비동기 실행기 생성
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        // 권장값 (환경에 따라 조정)
+        executor.setCorePoolSize(40);    // 평소에는 적은 스레드로 자원 절약
+        executor.setMaxPoolSize(200);    // 트래픽 급증 시 빠르게 확장 가능
+        executor.setQueueCapacity(Integer.MAX_VALUE); // 대기열을 얼마나 세울지
+        executor.setThreadNamePrefix("rss-exec-");
+        executor.setTaskDecorator(new ContextCopyTaskDecorator());
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
+    public Semaphore dbLimitSemaphore() {
+        return new Semaphore(40);
+    }
+
+    @Bean(name = "fetchRssExecutor")
+    public Executor fetchRssExecutor() {
         SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor();
 
         // 2. 가상 스레드 모드 활성화 (플랫폼 스레드 대신 가상 스레드 생성)
@@ -36,6 +44,7 @@ public class AsyncConfig {
 
         return executor;
     }
+
 
     @Bean(name = "mailTaskExecutor")
     public Executor mailTaskExecutor() {

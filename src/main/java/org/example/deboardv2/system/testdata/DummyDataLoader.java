@@ -6,7 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.comment.repository.CommentsRepository;
 import org.example.deboardv2.likes.repository.LikesRepository;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.FeedType;
 import org.example.deboardv2.rss.parser.RssParserStrategy;
+import org.example.deboardv2.rss.repository.FeedRepository;
 import org.example.deboardv2.rss.service.RssParserService;
 import org.example.deboardv2.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -29,6 +32,7 @@ public class DummyDataLoader implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
     private final RssParserService rssParserService;
+    private final FeedRepository feedRepository;
 //    private final AsyncRssService asyncRssService;
 
     @Override
@@ -74,7 +78,7 @@ public class DummyDataLoader implements CommandLineRunner {
                 {"블로그1", "https://lsdiary.tistory.com/", "PRIVATE"},
                 {"블로그2", "https://liberal-arts-developer.tistory.com/", "PRIVATE"},
                 {"블로그3", "https://velog.io/@heoseungyeon/posts", "PRIVATE"},
-                {"블로그4", "https://youwjune.tistory.com/",  "PRIVATE"},
+                {"블로그4", "https://youwjune.tistory.com/", "PRIVATE"},
 
                 // 추가 데이터
                 {"중년금융생활", "https://middleage-finance-life.tistory.com/", "PRIVATE"},
@@ -219,6 +223,17 @@ public class DummyDataLoader implements CommandLineRunner {
             log.info("구독 추가 완료: {} (URL: {})", siteName, resolveUrl);
 
         }
+        // 모킹 피드
+        List<Feed> feeds = new ArrayList<>();
+        for (int i = 1; i <= 1000; i++) {
+            feeds.add(Feed.builder()
+                    .feedUrl("http://localhost:8081/mock-rss/" + i)
+                    .siteName("Test Feed " + i)
+                    .isActive(true)
+                    .feedType(FeedType.PRIVATE)
+                    .build());
+        }
+        feedRepository.saveAll(feeds);
 
 
         // Post 데이터도 동일한 방식으로 batch insert

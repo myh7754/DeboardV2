@@ -9,11 +9,15 @@ import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.RssPost;
+import org.example.deboardv2.rss.dto.Candidate;
+import org.example.deboardv2.rss.dto.FeedFetchResult;
 import org.example.deboardv2.rss.parser.RssParserStrategy;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
+import org.jdom2.Element;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,18 +48,21 @@ public class RssParserService {
     // 새로 갱신된 게시글들만 추출
     public List<SyndEntry> extractNewEntries(SyndFeed feed, Feed dtoFeed) {
         List<SyndEntry> entries = feed.getEntries();
+        long startTime = System.currentTimeMillis();
         List<SyndEntry> newEntries = extractPostListImprove(dtoFeed, entries);
+        long endTime = System.currentTimeMillis();
+        log.info("조회처리 시간 {} : {}ms", dtoFeed.getFeedUrl(), (endTime - startTime));
         return newEntries;
     }
 
-    public List<Post> parseNewEntries(List<SyndEntry> entries, RssParserStrategy parser, Feed feed) throws Exception {
+    public List<Post> parseNewEntries(List<SyndEntry> entries, RssParserStrategy parser, Feed feed, Map<String, Element> rawMap) throws Exception {
         if (entries == null || entries.isEmpty()) {
             return Collections.emptyList();
         }
-        List<RssPost> rssPosts = convertToRssPosts(entries, parser);
+        List<RssPost> rssPosts = convertToRssPosts(entries, parser,rawMap);
 
         // 해당 feed에서 발행된 글의 글쓴이 만들어서 가져오기
-        Map<String, ExternalAuthor> authorMap = externalAuthorService.prepareAuthors(rssPosts, feed.getFeedUrl());
+        Map<String, ExternalAuthor> authorMap = externalAuthorService.prepareAuthors(rssPosts, feed);
 
         return rssPosts.stream()
                 .map(rssPost -> {
@@ -78,11 +85,12 @@ public class RssParserService {
                 .collect(Collectors.toList());
     }
 
-    private static List<RssPost> convertToRssPosts(List<SyndEntry> entries, RssParserStrategy parser) {
+    private static List<RssPost> convertToRssPosts(List<SyndEntry> entries, RssParserStrategy parser, Map<String, Element> rawMap) {
         List<RssPost> rssPosts = entries.stream()
                 .map(entry -> {
                     try {
-                        return parser.parse(entry);
+                        Element element = rawMap.get(entry.getLink());
+                        return parser.parse(entry, element);
                     } catch (Exception e) {
                         return null;
                     }
@@ -111,7 +119,6 @@ public class RssParserService {
 
     @Transactional(readOnly = true)
     public List<SyndEntry> extractPostListImprove(Feed dtoFeed, List<SyndEntry> entries) {
-
         String key = "rss:feed:" + dtoFeed.getId();
         List<String> links = entries.stream()
                         .map(SyndEntry::getLink)

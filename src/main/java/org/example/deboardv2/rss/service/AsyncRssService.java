@@ -8,14 +8,18 @@ import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.dto.FeedFetchResult;
+import org.example.deboardv2.rss.dto.RssFeedData;
 import org.example.deboardv2.rss.parser.RssParserStrategy;
+import org.jdom2.Element;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -25,19 +29,20 @@ public class AsyncRssService {
     private final RssFetchService rssFetchService;
     private final PostService postService;
     private final RedisService redisService;
-
-    private final Semaphore semaphore = new Semaphore(100);
+    private final Executor rssTaskExecutor;
+    private final Semaphore dbLimitSemaphore;
 
     @Async("rssTaskExecutor")
     public CompletableFuture<Long> collectAndSavePosts(Feed feed) throws Exception {
-        semaphore.acquire();
         try {
             RssParserStrategy selectParser = rssParserService.selectParser(feed.getFeedUrl());
-            SyndFeed syndFeed = rssFetchService.fetchSyndFeed(feed.getFeedUrl());
+            RssFeedData rssData = rssFetchService.fetchRssData(feed.getFeedUrl());
+            SyndFeed syndFeed = rssData.getSyndFeed();
+            Map<String, Element> rawMap = rssData.getRawElementMap();
 
             List<SyndEntry> newEntries = rssParserService.extractNewEntries(syndFeed, feed);
             if (!newEntries.isEmpty()) {
-                List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser, feed);
+                List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser, feed, rawMap);
                 postService.saveBatch(rssPosts);
                 String key = "rss:feed:" + feed.getId();
                 List<String> linksToCache = rssPosts.stream()
@@ -55,9 +60,63 @@ public class AsyncRssService {
             return CompletableFuture.completedFuture(feed.getId());
         } catch (Exception e) {
             log.error("RSS 수집 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
-        } finally {
-            semaphore.release(); // 허가 반납
         }
         return CompletableFuture.completedFuture(null);
     }
+
+    @Async("fetchRssExecutor")
+    public CompletableFuture<Long> collectAndSave(Feed feed) {
+        // 1. 네트워크 호출 (비동기)
+        return rssFetchService.fetchRssDataAsync(feed.getFeedUrl())
+                .thenComposeAsync(rssData -> {
+                    RssParserStrategy selectParser = rssParserService.selectParser(feed.getFeedUrl());
+                    // 2. 파싱 및 저장 단계로 이동
+                    return processParsingAndStorage(feed, rssData, selectParser);
+                })
+                .exceptionally(e -> {
+                    // 네트워크 단계 또는 파싱/저장 단계 중 어디서든 터지면 호출됨
+                    log.error("RSS 수집 최종 실패 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                    return feed.getId(); // 실패 시 피드 ID 반환 (비활성화 대상)
+                });
+    }
+
+    private CompletableFuture<Long> processParsingAndStorage(Feed feed, RssFeedData rssData, RssParserStrategy parser) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+
+                SyndFeed syndFeed = rssData.getSyndFeed();
+                Map<String, Element> rawMap = rssData.getRawElementMap();
+
+                // 중복 체크 및 저장
+                List<SyndEntry> newEntries = rssParserService.extractPostListImprove(feed, syndFeed.getEntries());
+
+                if (newEntries.isEmpty()) {
+                    log.debug("새로운 게시글 없음: {}", feed.getFeedUrl());
+                    return null; // 성공했지만 저장할 게 없는 경우 null (정상)
+                }
+
+                List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, parser, feed, rawMap);
+                postService.saveBatch(rssPosts);
+
+                // Redis 캐시 갱신
+                String key = "rss:feed:" + feed.getId();
+                List<String> linksToCache = rssPosts.stream().map(Post::getLink).toList();
+                redisService.addAllToZSet(key, linksToCache, 50);
+
+                log.info("수집 완료: {} ({}개 저장)", feed.getFeedUrl(), rssPosts.size());
+                return null; // 모든 작업 성공 시 null 반환
+
+            } catch (Exception e) {
+                log.error("DB 저장 작업 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                // 여기서 ID를 반환해야 exceptionally 혹은 join()에서 에러 피드로 인식함
+                return feed.getId();
+            } finally {
+            }
+        }, rssTaskExecutor);
+    }
 }
+
+
+
+
+

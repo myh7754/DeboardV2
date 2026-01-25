@@ -2,6 +2,7 @@ package org.example.deboardv2.redis.service;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface RedisService {
@@ -39,4 +40,8 @@ public interface RedisService {
     void addAllToZSet(String key, List<String> value, int maxSize);
 
     List<Boolean> checkLinksExistence(String key, List<String> links);
+
+    List<Boolean> checkLinksExistenceBatch(List<String> keys, List<String> links);
+
+    void batchUpdateCache(Map<String, List<String>> linksToCacheMap, int i);
 }

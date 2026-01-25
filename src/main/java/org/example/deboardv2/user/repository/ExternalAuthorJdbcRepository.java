@@ -24,7 +24,7 @@ public class ExternalAuthorJdbcRepository {
 
     @Transactional
     public List<ExternalAuthor> saveBatch(List<ExternalAuthor> authorList) {
-        String sql = "INSERT INTO external_author (name, source_url) VALUES (?, ?)";
+        String sql = "INSERT INTO external_author (name, feed_id) VALUES (?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -34,7 +34,7 @@ public class ExternalAuthorJdbcRepository {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
                         ps.setString(1, authorList.get(i).getName());
-                        ps.setString(2, authorList.get(i).getSourceUrl());
+                        ps.setLong(2, authorList.get(i).getFeed().getId());
                     }
 
                     @Override

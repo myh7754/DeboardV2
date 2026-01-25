@@ -7,9 +7,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -122,5 +120,34 @@ public class RedisServiceImpl implements RedisService {
         return results.stream()
                 .map(result -> result != null)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Boolean> checkLinksExistenceBatch(List<String> keys, List<String> links) {
+// 파이프라인을 통해 서로 다른 Key들에 대해 한 번에 조회
+        List<Object> results = redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            for (int i = 0; i < links.size(); i++) {
+                connection.zScore(keys.get(i).getBytes(), links.get(i).getBytes());
+            }
+            return null;
+        });
+        return results.stream().map(Objects::nonNull).toList();
+    }
+
+    @Override
+    public void batchUpdateCache(Map<String, List<String>> feedLinkMap, int maxSize) {
+        long now = System.currentTimeMillis();
+        // 파이프라인으로 여러 피드의 ZSet을 한 번에 업데이트하고 개수 제한 적용
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            feedLinkMap.forEach((key, links) -> {
+                byte[] rawKey = key.getBytes();
+                for (String link : links) {
+                    connection.zAdd(rawKey, (double) now, link.getBytes());
+                }
+                // 최신 maxSize(50개)만 남기고 삭제
+                connection.zRemRange(rawKey, 0, -(maxSize + 1));
+            });
+            return null;
+        });
     }
 }

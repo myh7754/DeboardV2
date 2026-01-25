@@ -32,11 +32,12 @@ public class LoggingAspect {
 //    @Around("execution(* org.example.deboardv2..service..*(..))")
 //    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
 //        // ProceedingJoinPoint 사용법
-////        joinPoint.getSignature().getName() → 메서드 이름
-////        joinPoint.getArgs() → 전달된 매개변수 배열
-////        joinPoint.getTarget() → 호출된 실제 객체
-////        joinPoint.getSignature().toShortString() → 간단한 시그니처
-////        joinPoint.getSignature().toLongString() → 자세한 시그니처
+
+    /// /        joinPoint.getSignature().getName() → 메서드 이름
+    /// /        joinPoint.getArgs() → 전달된 매개변수 배열
+    /// /        joinPoint.getTarget() → 호출된 실제 객체
+    /// /        joinPoint.getSignature().toShortString() → 간단한 시그니처
+    /// /        joinPoint.getSignature().toLongString() → 자세한 시그니처
 //
 //        Long start = System.currentTimeMillis();
 //        Object result = joinPoint.proceed();
@@ -75,10 +76,12 @@ public class LoggingAspect {
 
 // Controller는 요청/응답 로깅, Service는 실행 시간만 로깅
     @Pointcut("execution(* org.example.deboardv2..controller..*(..))")
-    public void controllerLayer() {}
+    public void controllerLayer() {
+    }
 
     @Pointcut("within(org.example.deboardv2..service..*)")
-    public void serviceLayer() {}
+    public void serviceLayer() {
+    }
 
     // Controller 로깅: 입력 파라미터 포함
     @Around("controllerLayer()")
@@ -98,17 +101,17 @@ public class LoggingAspect {
 
         long startTime = System.currentTimeMillis();
 
-            Object result = joinPoint.proceed();
-            long duration = System.currentTimeMillis() - startTime;
+        Object result = joinPoint.proceed();
+        long duration = System.currentTimeMillis() - startTime;
 
-            // 200ms 이상 걸린 요청만 WARN으로 기록
-            if (duration > 500) {
-                log.warn("[{}] SLOW {} - {}ms", traceId, method, duration);
-            } else {
-                log.debug("[{}] END {} - {}ms", traceId, method, duration);
-            }
+        // 200ms 이상 걸린 요청만 WARN으로 기록
+        if (duration > 500) {
+            log.warn("[{}] SLOW {} - {}ms", traceId, method, duration);
+        } else {
+            log.debug("[{}] END {} - {}ms", traceId, method, duration);
+        }
 
-            return result;
+        return result;
     }
 
     private String formatParams(Object[] args) {
@@ -136,18 +139,19 @@ public class LoggingAspect {
     public Object logService(ProceedingJoinPoint joinPoint) throws Throwable {
         String traceId = org.slf4j.MDC.get(TraceIdFilter.TRACE_ID);
         String method = joinPoint.getSignature().toShortString();
+        boolean isHttpRequest = RequestContextHolder.getRequestAttributes() != null;
 
         long startTime = System.currentTimeMillis();
 
-            Object result = joinPoint.proceed();
-            long duration = System.currentTimeMillis() - startTime;
+        Object result = joinPoint.proceed();
+        long duration = System.currentTimeMillis() - startTime;
 
-            // 500ms 이상 걸린 서비스 로직만 로깅
-            if (duration > 500) {
-                log.warn("[{}] SLOW SERVICE {} - {}ms", traceId, method, duration);
-            }
+        // 500ms 이상 걸린 서비스 로직만 로깅
+        if (isHttpRequest && duration > 500) {
+            log.warn("[{}] SLOW SERVICE {} - {}ms", traceId, method, duration);
+        }
 
-            return result;
+        return result;
     }
 
 }

@@ -2,17 +2,16 @@ package org.example.deboardv2.rss.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.RssPost;
+import org.example.deboardv2.rss.dto.Candidate;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.repository.ExternalAuthorJdbcRepository;
 import org.example.deboardv2.user.repository.ExternalAuthorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,10 +22,10 @@ public class ExternalAuthorService {
     private final ExternalAuthorJdbcRepository externalAuthorJdbcRepository;
 
     @Transactional
-    public Map<String, ExternalAuthor> prepareAuthors(List<RssPost> rssPosts, String rssFeedUrl) {
+    public Map<String, ExternalAuthor> prepareAuthors(List<RssPost> rssPosts, Feed feed) {
         Set<String> authorNames= extractAuthorNames(rssPosts);
-        Map<String, ExternalAuthor> authorMap = findExistingAuthors(authorNames, rssFeedUrl);
-        saveNewAuthors(authorNames, authorMap, rssFeedUrl);
+        Map<String, ExternalAuthor> authorMap = findExistingAuthors(authorNames, feed);
+        saveNewAuthors(authorNames, authorMap, feed);
         return authorMap;
     }
 
@@ -39,18 +38,18 @@ public class ExternalAuthorService {
     }
 
     // 이미 존재하는 작가들은 캐시로 사용하기 위해 Map로 불러옴
-    private Map<String, ExternalAuthor> findExistingAuthors(Set<String> authorNames, String rssFeedUrl) {
-        return externalAuthorRepository.findAllByNameInAndSourceUrl(authorNames,rssFeedUrl)
+    private Map<String, ExternalAuthor> findExistingAuthors(Set<String> authorNames, Feed feed) {
+        return externalAuthorRepository.findAllByNameInAndFeed(authorNames,feed)
                 .stream()
                 .collect(Collectors.toMap(ExternalAuthor::getName, a -> a));
 
     }
 
     // 새로운 글쓴이를 추출하여 저장
-    private void saveNewAuthors(Set<String> allNames, Map<String, ExternalAuthor> authorMap, String rssFeedUrl) {
+    private void saveNewAuthors(Set<String> allNames, Map<String, ExternalAuthor> authorMap, Feed feed) {
         List<ExternalAuthor> newAuthors = allNames.stream()
                 .filter(name -> !authorMap.containsKey(name))
-                .map(name -> createAuthorEntity(name,rssFeedUrl))
+                .map(name -> createAuthorEntity(name,feed))
                 .toList();
 
         if (!newAuthors.isEmpty()) {
@@ -65,9 +64,8 @@ public class ExternalAuthorService {
 //        return externalAuthorRepository.saveAll(newAuthors);
     }
 
-    private ExternalAuthor createAuthorEntity(String name, final String rssFeedUrl) {
-        ExternalAuthor author = new ExternalAuthor();
-        author.update(name, rssFeedUrl);
+    private ExternalAuthor createAuthorEntity(String name, final Feed feed) {
+        ExternalAuthor author = new ExternalAuthor(name, feed);
         return author;
     }
 }
