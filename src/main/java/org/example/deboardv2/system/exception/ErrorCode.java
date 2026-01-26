@@ -24,7 +24,7 @@ public enum ErrorCode {
 
     //jwt
     EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 ACCESS토큰 입니다."),
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "토큰이 만료되어 로그아웃 합니다."),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, " 로그아웃 합니다."),
 
     //post
     POST_NOT_FOUND(HttpStatus.BAD_REQUEST, "게시글을 찾을 수 없습니다"),

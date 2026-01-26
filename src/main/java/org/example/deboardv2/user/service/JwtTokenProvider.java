@@ -81,14 +81,22 @@ public class JwtTokenProvider {
 
     // 검증 후 토큰의 정보 추출
     public TokenBody parseJwt(String token) {
-        Jws<Claims> parsed = Jwts.parser()
-                .verifyWith(getSecretKey())
-                .build()
-                .parseSignedClaims(token);
+        try {
+            Jws<Claims> parsed = Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token);
 
-        String subject = parsed.getPayload().getSubject();
-        String roleStr = parsed.getPayload().get("role", String.class);
-        Role role = Role.valueOf(roleStr);
-        return new TokenBody(Long.parseLong(subject),"1", role);
+            String subject = parsed.getPayload().getSubject();
+            String roleStr = parsed.getPayload().get("role", String.class);
+            Role role = Role.valueOf(roleStr);
+            return new TokenBody(Long.parseLong(subject),"1", role);
+        } catch (JwtException e) {
+            log.debug("JWT 토큰 파싱 실패: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("토큰 파싱 중 예상치 못한 오류 발생: {}", e.getMessage());
+            throw new RuntimeException("토큰 파싱 실패", e);
+        }
     }
 }

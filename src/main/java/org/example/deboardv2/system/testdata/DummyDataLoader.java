@@ -120,7 +120,8 @@ public class DummyDataLoader implements CommandLineRunner {
                 {"RGY0409", "https://rgy0409.tistory.com/", "PRIVATE"},
                 {"Gooseskin", "https://gooseskin.tistory.com/", "PRIVATE"},
                 {"Dhsrkwrjt", "https://dhsrkwrjt.tistory.com/", "PRIVATE"},
-                {"Lim826bk", "https://lim826bk.tistory.com/", "PRIVATE"}
+                {"Lim826bk", "https://lim826bk.tistory.com/", "PRIVATE"},
+                {"권한없음 페이지", "https://kk.tistory.com/", "PRIVATE"}
         };
         for (String[] feedInfo : feedsToInsert) {
             String originalUrl = feedInfo[1];
@@ -187,7 +188,8 @@ public class DummyDataLoader implements CommandLineRunner {
                 "https://rgy0409.tistory.com/",
                 "https://gooseskin.tistory.com/",
                 "https://dhsrkwrjt.tistory.com/",
-                "https://lim826bk.tistory.com/"
+                "https://lim826bk.tistory.com/",
+                "https://kk.tistory.com/"
 
         };
 
@@ -224,16 +226,16 @@ public class DummyDataLoader implements CommandLineRunner {
 
         }
         // 모킹 피드
-        List<Feed> feeds = new ArrayList<>();
-        for (int i = 1; i <= 1000; i++) {
-            feeds.add(Feed.builder()
-                    .feedUrl("http://localhost:8081/mock-rss/" + i)
-                    .siteName("Test Feed " + i)
-                    .isActive(true)
-                    .feedType(FeedType.PRIVATE)
-                    .build());
-        }
-        feedRepository.saveAll(feeds);
+//        List<Feed> feeds = new ArrayList<>();
+//        for (int i = 1; i <= 1000; i++) {
+//            feeds.add(Feed.builder()
+//                    .feedUrl("http://localhost:8081/mock-rss/" + i)
+//                    .siteName("Test Feed " + i)
+//                    .isActive(true)
+//                    .feedType(FeedType.PRIVATE)
+//                    .build());
+//        }
+//        feedRepository.saveAll(feeds);
 
 
         // Post 데이터도 동일한 방식으로 batch insert

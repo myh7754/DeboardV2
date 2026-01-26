@@ -60,6 +60,7 @@ public class AsyncRssService {
             return CompletableFuture.completedFuture(feed.getId());
         } catch (Exception e) {
             log.error("RSS 수집 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+            return CompletableFuture.completedFuture(feed.getId());
         }
         return CompletableFuture.completedFuture(null);
     }

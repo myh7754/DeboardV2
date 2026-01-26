@@ -34,8 +34,8 @@ public class RssScheduler {
     private final PostService postService;
     private final ExternalAuthorService externalAuthorService;
 
-    //    @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
-    @Scheduled(cron = "0 0/5 * * * *") // 5분마다 실행
+        @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
+//    @Scheduled(cron = "0 0/5 * * * *") // 5분마다 실행
 //    @Scheduled(fixedRate = 60_000) // 1분마다 실행
     public void fetchAllRssFeeds() throws Exception {
         List<Feed> allFeeds = feedService.getAllFeeds();
@@ -43,7 +43,7 @@ public class RssScheduler {
         long totalStartTime = System.currentTimeMillis();
         for (Feed feed : allFeeds) {
             // 비동기로 피드별 수집 작업 던지기
-            CompletableFuture<Long> future = asyncRssService.collectAndSavePosts(feed);
+            CompletableFuture<Long> future = asyncRssService.collectAndSave(feed);
             futures.add(future);
         }
 

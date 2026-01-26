@@ -29,20 +29,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // 로그인, 회원가입, 토큰 재발급 엔드포인트는 필터 스킵
+        String requestURI = request.getRequestURI();
+        if (requestURI.startsWith("/api/auth/signin") || 
+            requestURI.startsWith("/api/auth/signup") || 
+            requestURI.startsWith("/api/auth/refresh")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String token = resolveTokenCookie(request);
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            TokenBody tokenBody = jwtTokenProvider.parseJwt(token);
-            Long memberId = tokenBody.getMemberId();
-            Role role = tokenBody.getRole();
-            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role.name()));
+            try {
+                TokenBody tokenBody = jwtTokenProvider.parseJwt(token);
+                Long memberId = tokenBody.getMemberId();
+                Role role = tokenBody.getRole();
+                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role.name()));
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    tokenBody,
-                    token,
-                    authorities
-            );
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        tokenBody,
+                        token,
+                        authorities
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                // 토큰 파싱 실패 시 인증 정보 설정하지 않고 계속 진행
+                log.debug("JWT 토큰 파싱 실패: {}", e.getMessage());
+            }
         }
         filterChain.doFilter(request, response);
     }

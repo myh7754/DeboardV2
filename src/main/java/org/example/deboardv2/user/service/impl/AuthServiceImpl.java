@@ -13,6 +13,7 @@ import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.config.JwtConfig;
 import org.example.deboardv2.user.dto.*;
 import org.example.deboardv2.user.entity.User;
+import org.example.deboardv2.user.repository.UserRepository;
 import org.example.deboardv2.user.service.AuthService;
 import org.example.deboardv2.user.service.JwtTokenProvider;
 import org.example.deboardv2.user.service.UserService;
@@ -36,6 +37,7 @@ import java.util.List;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
     private final UserService userService;
+    private final UserRepository userRepository;
     private final RedisService redisService;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
@@ -67,13 +69,20 @@ public class AuthServiceImpl implements AuthService {
     //로그인
     @Override
     public LoginResponse signIn(SignInRequest signInRequest) {
-        User readUser = userService.getUserById(signInRequest.getEmail());
-        if (!readUser.getEmail().equals(signInRequest.getEmail())) {
-            throw new CustomException(ErrorCode.EMAIL_MISMATCH);
-        }
+        // 이메일로 사용자 찾기 (Optional 사용)
+        User readUser = userRepository.findByEmail(signInRequest.getEmail())
+                .orElseThrow(() -> {
+                    log.info("이메일 오류 발생: 해당 이메일의 회원을 찾을 수 없습니다.");
+                    return new CustomException(ErrorCode.EMAIL_MISMATCH);
+                });
+        
+        // 비밀번호 검증
+        log.info("비밀번호 검증 시도");
         if (!passwordEncoder.matches(signInRequest.getPassword(), readUser.getPassword())) {
+            log.info("비밀번호 틀린 오류 발생");
             throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
+        log.info("검증 통과");
         TokenBody tokenBody = new TokenBody(readUser.getId(),readUser.getNickname() ,readUser.getRole());
         // access token
         String access = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());
@@ -88,9 +97,13 @@ public class AuthServiceImpl implements AuthService {
             // 토큰이 없으면 바로 리턴
             return;
         }
-        TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
-
-        redisService.setValueWithExpire("refresh:"+tokenBody.getMemberId(), refresh, jwtConfig.getValidation().getRefresh());
+        try {
+            TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
+            redisService.setValueWithExpire("refresh:"+tokenBody.getMemberId(), refresh, jwtConfig.getValidation().getRefresh());
+        } catch (Exception e) {
+            // 토큰 파싱 실패 시 (만료된 토큰 등) 로그아웃 처리 계속 진행
+            log.debug("로그아웃 시 토큰 파싱 실패 (만료된 토큰일 수 있음): {}", e.getMessage());
+        }
     }
 
     // 중복검사
