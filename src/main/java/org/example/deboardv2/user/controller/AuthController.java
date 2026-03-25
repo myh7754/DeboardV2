@@ -3,6 +3,7 @@ package org.example.deboardv2.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 @Slf4j
 public class AuthController {
-    public final AuthService authService;
-    public final JwtTokenProvider jwtTokenProvider;
-    public final JwtConfig jwtConfig;
+    private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtConfig jwtConfig;
     private final UserService userService;
 
     @Operation(summary = "이메일 인증 코드 요청", description = "사용자가 입력한 이메일로 인증 코드를 발송합니다.")
@@ -48,14 +49,14 @@ public class AuthController {
 
     @Operation(summary = "회원가입", description = "신규 회원을 등록합니다.")
     @PostMapping("/signup")
-    public ResponseEntity<?> signUp(@RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<?> signUp(@Valid @RequestBody SignupRequest signupRequest) {
         authService.signUp(signupRequest);
         return ResponseEntity.ok().body("ok");
     }
 
     @Operation(summary = "로그인", description = "사용자가 로그인하면 JWT 토큰을 발급하고 쿠키에 저장합니다.")
     @PostMapping("/signin")
-    public ResponseEntity<?> signIn(@RequestBody SignInRequest signInRequest, HttpServletResponse response) {
+    public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest signInRequest, HttpServletResponse response) {
         LoginResponse loginResponse = authService.signIn(signInRequest);
         JwtToken jwtToken = loginResponse.getJwtToken();
         // 쿠키에 access 저장

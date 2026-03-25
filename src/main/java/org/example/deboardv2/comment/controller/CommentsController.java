@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.comment.dto.CommentsDetail;
 import org.example.deboardv2.comment.dto.CommentsRequest;
 import org.example.deboardv2.comment.service.CommentsService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +52,7 @@ public class CommentsController {
 
     @Operation(summary = "댓글 작성", description = "새로운 댓글을 작성합니다.")
     @PostMapping
-    public ResponseEntity<?> createComment(@RequestBody CommentsRequest comment) {
+    public ResponseEntity<?> createComment(@Valid @RequestBody CommentsRequest comment) {
         commentsService.createComments(comment);
         return ResponseEntity.ok().build();
     }
@@ -65,7 +66,7 @@ public class CommentsController {
 
     @Operation(summary = "댓글 수정", description = "댓글 ID로 댓글 내용을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateComment(@RequestBody CommentsRequest comment, @PathVariable Long id) {
+    public ResponseEntity<?> updateComment(@Valid @RequestBody CommentsRequest comment, @PathVariable Long id) {
         commentsService.updateComments(comment, id);
         return ResponseEntity.ok().build();
     }

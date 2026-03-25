@@ -1,5 +1,6 @@
 package org.example.deboardv2.user.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.deboardv2.user.dto.UpdateRequest;
 import org.example.deboardv2.user.service.UserService;
@@ -19,7 +20,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<?> update(@RequestBody UpdateRequest dto,@PathVariable Long userId){
+    public ResponseEntity<?> update(@Valid @RequestBody UpdateRequest dto,@PathVariable Long userId){
         userService.update(userId, dto);
         return ResponseEntity.ok("ok");
     }

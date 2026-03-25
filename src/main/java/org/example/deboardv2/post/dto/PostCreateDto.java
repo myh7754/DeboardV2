@@ -1,6 +1,8 @@
 package org.example.deboardv2.post.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.deboardv2.post.entity.Post;
@@ -8,14 +10,17 @@ import org.example.deboardv2.post.entity.Post;
 @Data
 @NoArgsConstructor
 public class PostCreateDto {
+    @NotBlank
+    @Size(max = 200)
     public String title;
+
+    @NotBlank
     public String content;
 
     @QueryProjection
-    public PostCreateDto(String title, String content, String author) {
+    public PostCreateDto(String title, String content) {
         this.title = title;
         this.content = content;
-
     }
 
     public static PostCreateDto from(Post post) {

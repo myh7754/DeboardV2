@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
-//import org.example.deboardv2.rss.service.RssService;
+import jakarta.validation.Valid;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Deque;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,19 +22,19 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
     private final PostService postService;
     private final SearchService searchService;
-//    private final RssService rssService;
 
     @Operation(summary = "게시글 목록 조회", description = "검색된 혹은 모든 게시글을 조회합니다.")
     @GetMapping("/posts")
-    public ResponseEntity<?> getAllPosts(
+    public ResponseEntity<?> getAllPosts (
             @RequestParam(defaultValue = "title", required = false) String searchType,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
-        // sort = createdAt, desc -> ["createdAt", "eesc"]
+        // sort = createdAt, desc -> ["createdAt", "desc"]
         Page<PostDetails> postDtos;
+
         if (keyword == null || keyword.isBlank()) {
             postDtos = postService.readAll(size, page);
         }  else {
@@ -50,13 +52,13 @@ public class PostController {
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 작성합니다.")
     @PostMapping("/posts")
-    public ResponseEntity<?> createPost(@RequestBody PostCreateDto postDto) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateDto postDto) {
         return ResponseEntity.ok(postService.save(postDto));
     }
 
     @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")
     @PutMapping("/posts/{postId}")
-    public ResponseEntity<?> updatePost(@RequestBody PostUpdateDto postDto, @PathVariable Long postId) {
+    public ResponseEntity<?> updatePost(@Valid @RequestBody PostUpdateDto postDto, @PathVariable Long postId) {
         postService.update(postDto, postId);
         return ResponseEntity.ok().build();
     }
@@ -81,7 +83,7 @@ public class PostController {
         if (keyword == null || keyword.isBlank()) {
             postDtos = postService.readLikesPosts(size, page);
         } else {
-            postDtos = searchService.seardhLikePosts(searchType, keyword, page, size);
+            postDtos = searchService.searchLikePosts(searchType, keyword, page, size);
         }
         return ResponseEntity.ok(postDtos);
     }
