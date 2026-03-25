@@ -39,12 +39,14 @@ public class CommentsServiceImpl implements CommentsService {
 
     // 부모 댓글 페이징
     @Override
+    @Transactional(readOnly = true)
     public Page<CommentsDetail> readComments(Long postId, int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
         return customRepository.findAll(postId, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<CommentsDetail> replies(Long parentId, int size, int page) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("commentsId").ascending());
         return customRepository.findReplies(parentId, pageable);

@@ -42,7 +42,7 @@ public class Post extends BaseEntity {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    private UserFeed userFeed; // 개인일 경우
 
-    @Column(columnDefinition = "TEXT")
+    @Column(unique = true, length = 500)
     private String link; // 게시글 원본 링크
 
     @Setter
