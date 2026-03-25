@@ -7,12 +7,10 @@ import org.example.deboardv2.post.dto.PostCreateDto;
 import org.example.deboardv2.post.dto.PostDetails;
 import org.example.deboardv2.post.dto.PostUpdateDto;
 import org.example.deboardv2.post.entity.Post;
-//import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostJdbcRepository;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.post.service.PostService;
-//import org.example.deboardv2.rss.service.RssService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.User;
@@ -30,12 +28,11 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class PostServiceImpl implements PostService {
-    public final UserService userService;
-    public final PostRepository postRepository;
-    public final PostCustomRepository postCustomRepository;
-    public final PostJdbcRepository postJdbcRepository;
-//    public final RssService rssService;
-//
+    private final UserService userService;
+    private final PostRepository postRepository;
+    private final PostCustomRepository postCustomRepository;
+    private final PostJdbcRepository postJdbcRepository;
+
     @Override
     @Transactional
     public PostDetails save(PostCreateDto post) {
@@ -48,7 +45,6 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void saveBatch(List<Post> posts) {
         postJdbcRepository.saveBatch(posts);
-//        postRepository.saveAll(posts);
     }
 
     @Override
@@ -80,8 +76,10 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PostDetails> readLikesPosts(int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
+
         return postCustomRepository.findLikesPosts(pageable);
     }
 
@@ -93,7 +91,6 @@ public class PostServiceImpl implements PostService {
         if (deletedCount == 0) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
-        postRepository.deleteById(postId);
     }
 
     @Override
@@ -108,8 +105,6 @@ public class PostServiceImpl implements PostService {
         if (updateCount == 0) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
-        Post postReferenceById = getPostReferenceById(postId);
-        postReferenceById.update(dto);
     }
 
 

@@ -26,9 +26,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.List;
 
 
 
@@ -42,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
     private static final String EMAIL_PREFIX = "email:";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtConfig jwtConfig;
     private final PostRepository postRepository;
@@ -173,25 +173,9 @@ public class AuthServiceImpl implements AuthService {
 
 
     }
-//
-//    @Override
-//    public Boolean authCheck(String nickname) {
-//        String currentUserNickname = userService.getCurrentUserNickname();
-//        return currentUserNickname.equals(nickname);
-//    }
-
     // 6자리 랜덤숫자 생성
     private String generateRandomCode() {
-        return String.valueOf((int)((Math.random() * 900000) + 100000)); // 6자리 숫자
+        return String.valueOf(SECURE_RANDOM.nextInt(900000) + 100000);
     }
 
-
-
-
-    private void validatePasswordRule(String password) {
-//        if (password.length() < 8) {
-//            throw new WeakPasswordException("비밀번호는 8자 이상이어야 합니다.");
-//        }
-        // 더 많은 규칙을 여기에 추가 가능 (영문+숫자+특수문자 등)
-    }
 }

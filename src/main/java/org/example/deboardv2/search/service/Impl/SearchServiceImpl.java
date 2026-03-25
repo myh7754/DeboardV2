@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +17,7 @@ public class SearchServiceImpl implements SearchService {
     private final PostCustomRepository postCustomRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PostDetails> search(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<PostDetails> postDetails = postCustomRepository.searchPost(pageable, searchType, search);
@@ -23,7 +25,8 @@ public class SearchServiceImpl implements SearchService {
     }
 
     @Override
-    public Page<PostDetails> seardhLikePosts(String searchType, String search, int page, int size) {
+    @Transactional(readOnly = true)
+    public Page<PostDetails> searchLikePosts(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<PostDetails> postDetails = postCustomRepository.searchLikePosts(pageable, searchType, search);
         return postDetails;

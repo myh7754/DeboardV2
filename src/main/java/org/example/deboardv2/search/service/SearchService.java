@@ -5,5 +5,5 @@ import org.springframework.data.domain.Page;
 
 public interface SearchService {
     public Page<PostDetails> search(String searchType,String search, int page, int size);
-    public Page<PostDetails> seardhLikePosts(String searchType, String search, int page, int size);
+    public Page<PostDetails> searchLikePosts(String searchType, String search, int page, int size);
 }
