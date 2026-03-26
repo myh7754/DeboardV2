@@ -78,6 +78,7 @@ public class CommentsServiceImpl implements CommentsService {
     @Override
     @Transactional
     public void deleteComments(Long commentsId) {
+        authService.authCheck(commentsId, "COMMENT");
         commentsRepository.deleteById(commentsId);
     }
 }
