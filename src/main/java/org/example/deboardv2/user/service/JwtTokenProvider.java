@@ -6,6 +6,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.user.config.JwtConfig;
 import org.example.deboardv2.user.dto.TokenBody;
@@ -23,6 +24,9 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
     private final JwtConfig jwtConfig;
+
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
 
     // 비밀키 생성
     private SecretKey getSecretKey() {
@@ -53,7 +57,7 @@ public class JwtTokenProvider {
         }
         return ResponseCookie.from(tokenName, token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path(path)
                 .sameSite("Strict")
                 .maxAge(expired)
