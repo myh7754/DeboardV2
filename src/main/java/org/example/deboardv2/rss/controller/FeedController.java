@@ -20,7 +20,7 @@ public class FeedController {
     }
     @GetMapping("/feed")
     public ResponseEntity<?> getAllFeeds() {
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(feedService.getAllFeeds());
     }
 
     @PostMapping("/user-feed")

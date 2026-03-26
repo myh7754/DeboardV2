@@ -16,6 +16,8 @@ import org.example.deboardv2.user.entity.User;
 import org.example.deboardv2.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -44,8 +46,17 @@ public class FeedService {
                 .feedUrl(resolve)
                 .build();
         Feed feed = feedRepository.save(build);
-        asyncRssService.collectAndSavePosts(feed);
-        return feedRepository.save(feed);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    asyncRssService.collectAndSavePosts(feed);
+                } catch (Exception e) {
+                    log.error("RSS 수집 시작 실패 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                }
+            }
+        });
+        return feed;
     }
 
     @Transactional(readOnly = true)
