@@ -54,10 +54,9 @@ public class AuthServiceImpl implements AuthService {
         String email  = signupRequest.getEmail();
         try {
             // 이메일 미인증시 이메일 인증 요구
-            if (!Boolean.TRUE.equals(redisService.getValue(EMAIL_PREFIX+"certified:"+email))){
+            if (!redisService.checkAndDelete(EMAIL_PREFIX + "certified:" + email)) {
                 throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
             }
-            redisService.deleteValue(EMAIL_PREFIX+"certified:"+email);
             signupRequest.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
             return userService.create(signupRequest);
         } catch(DataIntegrityViolationException e) {

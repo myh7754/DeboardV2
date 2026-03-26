@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -14,6 +16,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final RedisScript<Long> CHECK_AND_DELETE_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('EXISTS', KEYS[1]) == 1 then " +
+            "  redis.call('DEL', KEYS[1]) " +
+            "  return 1 " +
+            "else " +
+            "  return 0 " +
+            "end",
+            Long.class
+    );
 
     // (공식처럼 자주 쓰는 코드) - ValueOperations 가져오기
     private ValueOperations<String, Object> valueOps() {
@@ -46,6 +58,12 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public void deleteValue(String key) {
         redisTemplate.delete(key);
+    }
+
+    @Override
+    public boolean checkAndDelete(String key) {
+        Long result = redisTemplate.execute(CHECK_AND_DELETE_SCRIPT, List.of(key));
+        return Long.valueOf(1L).equals(result);
     }
 
     // 값 저장 (만료 시간 설정)

@@ -22,6 +22,10 @@ public interface RedisService {
     // DEL key
     void deleteValue(String key);
 
+    // 키 존재 확인 + 삭제를 원자적으로 처리 (Lua 스크립트)
+    // EXISTS + DEL
+    boolean checkAndDelete(String key);
+
     // 값 저장 (만료 시간 설정)
     // EXPIRE key sec
     // key : 저장할 Redis 키 이름
