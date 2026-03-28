@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.deboardv2.post.dto.PostCreateDto;
-import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
+import org.example.deboardv2.post.dto.PostUpdateRequest;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.ExternalAuthor;
@@ -49,7 +49,7 @@ public class Post extends BaseEntity {
     @Column(name = "like_count", nullable = false)
     private int likeCount = 0;
 
-    public static Post from(PostCreateDto postDto, User user) {
+    public static Post from(PostCreateRequest postDto, User user) {
         Post post = new Post();
         post.title = postDto.getTitle();
         post.content = postDto.getContent();
@@ -71,7 +71,7 @@ public class Post extends BaseEntity {
         return post;
     }
 
-    public void update(PostUpdateDto postUpdateDto) {
+    public void update(PostUpdateRequest postUpdateDto) {
         this.title = postUpdateDto.getTitle();
         this.content = postUpdateDto.getContent();
     }

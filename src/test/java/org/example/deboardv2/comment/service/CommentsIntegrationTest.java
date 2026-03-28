@@ -1,10 +1,10 @@
 package org.example.deboardv2.comment.service;
 
-import org.example.deboardv2.comment.dto.CommentsDetail;
-import org.example.deboardv2.comment.dto.CommentsRequest;
+import org.example.deboardv2.comment.dto.CommentDetailResponse;
+import org.example.deboardv2.comment.dto.CommentCreateRequest;
 import org.example.deboardv2.comment.entity.Comments;
 import org.example.deboardv2.comment.repository.CommentsRepository;
-import org.example.deboardv2.post.dto.PostCreateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.system.exception.CustomException;
@@ -70,7 +70,7 @@ class CommentsIntegrationTest {
         otherUser = userRepository.save(User.toEntity(otherRequest));
 
         // Post 생성
-        PostCreateDto postCreateDto = new PostCreateDto();
+        PostCreateRequest postCreateDto = new PostCreateRequest();
         postCreateDto.setTitle("테스트 게시글");
         postCreateDto.setContent("테스트 내용");
         post = postRepository.save(Post.from(postCreateDto, owner));
@@ -92,9 +92,9 @@ class CommentsIntegrationTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    // CommentsRequest 생성 헬퍼
-    private CommentsRequest buildRequest(Long postId, Long parentId, String content) {
-        CommentsRequest request = new CommentsRequest();
+    // CommentCreateRequest 생성 헬퍼
+    private CommentCreateRequest buildRequest(Long postId, Long parentId, String content) {
+        CommentCreateRequest request = new CommentCreateRequest();
         request.setPostId(postId);
         request.setParentId(parentId);
         request.setContent(content);
@@ -105,7 +105,7 @@ class CommentsIntegrationTest {
     @DisplayName("createComments() - parentId null이면 부모 댓글 생성 성공")
     void createComments_parentIdNull_부모댓글생성() {
         // given
-        CommentsRequest request = buildRequest(post.getId(), null, "부모 댓글 내용");
+        CommentCreateRequest request = buildRequest(post.getId(), null, "부모 댓글 내용");
 
         // when
         commentsService.createComments(request);
@@ -123,12 +123,12 @@ class CommentsIntegrationTest {
     @DisplayName("createComments() - parentId 지정하면 대댓글 생성, parent 연관 확인")
     void createComments_parentId지정_대댓글생성() {
         // given - 부모 댓글 먼저 생성
-        CommentsRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
+        CommentCreateRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
         commentsService.createComments(parentRequest);
 
         Comments parentComment = commentsRepository.findAll().get(0);
 
-        CommentsRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 내용");
+        CommentCreateRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 내용");
 
         // when
         commentsService.createComments(replyRequest);
@@ -147,7 +147,7 @@ class CommentsIntegrationTest {
     @DisplayName("createComments() - 존재하지 않는 parentId이면 COMMENT_NOT_FOUND 예외 발생")
     void createComments_존재하지않는parentId_COMMENT_NOT_FOUND() {
         // given
-        CommentsRequest request = buildRequest(post.getId(), 99999L, "대댓글 내용");
+        CommentCreateRequest request = buildRequest(post.getId(), 99999L, "대댓글 내용");
 
         // when & then
         CustomException exception = assertThrows(CustomException.class,
@@ -159,13 +159,13 @@ class CommentsIntegrationTest {
     @DisplayName("updateComments() - 본인 댓글이면 내용 수정 성공")
     void updateComments_본인댓글_수정성공() {
         // given
-        CommentsRequest createRequest = buildRequest(post.getId(), null, "원본 내용");
+        CommentCreateRequest createRequest = buildRequest(post.getId(), null, "원본 내용");
         commentsService.createComments(createRequest);
 
         Comments saved = commentsRepository.findAll().get(0);
         Long commentId = saved.getCommentsId();
 
-        CommentsRequest updateRequest = buildRequest(post.getId(), null, "수정된 내용");
+        CommentCreateRequest updateRequest = buildRequest(post.getId(), null, "수정된 내용");
 
         // when
         commentsService.updateComments(updateRequest, commentId);
@@ -179,7 +179,7 @@ class CommentsIntegrationTest {
     @DisplayName("updateComments() - 타인 댓글이면 FORBIDDEN 예외 발생")
     void updateComments_타인댓글_FORBIDDEN() {
         // given - owner가 댓글 생성
-        CommentsRequest createRequest = buildRequest(post.getId(), null, "owner 댓글");
+        CommentCreateRequest createRequest = buildRequest(post.getId(), null, "owner 댓글");
         commentsService.createComments(createRequest);
 
         Comments saved = commentsRepository.findAll().get(0);
@@ -188,7 +188,7 @@ class CommentsIntegrationTest {
         // otherUser로 SecurityContext 전환
         setSecurityContext(otherUser);
 
-        CommentsRequest updateRequest = buildRequest(post.getId(), null, "수정 시도");
+        CommentCreateRequest updateRequest = buildRequest(post.getId(), null, "수정 시도");
 
         // when & then
         CustomException exception = assertThrows(CustomException.class,
@@ -200,7 +200,7 @@ class CommentsIntegrationTest {
     @DisplayName("deleteComments() - 본인 댓글이면 삭제 성공")
     void deleteComments_본인댓글_삭제성공() {
         // given
-        CommentsRequest createRequest = buildRequest(post.getId(), null, "삭제할 댓글");
+        CommentCreateRequest createRequest = buildRequest(post.getId(), null, "삭제할 댓글");
         commentsService.createComments(createRequest);
 
         Comments saved = commentsRepository.findAll().get(0);
@@ -217,7 +217,7 @@ class CommentsIntegrationTest {
     @DisplayName("deleteComments() - 타인 댓글이면 FORBIDDEN 예외 발생")
     void deleteComments_타인댓글_FORBIDDEN() {
         // given - owner가 댓글 생성
-        CommentsRequest createRequest = buildRequest(post.getId(), null, "owner 댓글");
+        CommentCreateRequest createRequest = buildRequest(post.getId(), null, "owner 댓글");
         commentsService.createComments(createRequest);
 
         Comments saved = commentsRepository.findAll().get(0);
@@ -236,7 +236,7 @@ class CommentsIntegrationTest {
     @DisplayName("readComments() - 부모 댓글만 조회되고 repliesCount 정확히 반환")
     void readComments_부모댓글만조회_repliesCount정확성() {
         // given - 부모 댓글 1개 생성
-        CommentsRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
+        CommentCreateRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
         commentsService.createComments(parentRequest);
 
         // 생성된 부모 댓글 ID 조회
@@ -247,16 +247,16 @@ class CommentsIntegrationTest {
 
         // 대댓글 3개 생성
         for (int i = 1; i <= 3; i++) {
-            CommentsRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 " + i);
+            CommentCreateRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 " + i);
             commentsService.createComments(replyRequest);
         }
 
         // when
-        Page<CommentsDetail> result = commentsService.readComments(post.getId(), 10, 0);
+        Page<CommentDetailResponse> result = commentsService.readComments(post.getId(), 10, 0);
 
         // then - 부모 댓글 1개만 조회
         assertThat(result.getTotalElements()).isEqualTo(1);
-        CommentsDetail detail = result.getContent().get(0);
+        CommentDetailResponse detail = result.getContent().get(0);
         assertThat(detail.getCommentsId()).isEqualTo(parentComment.getCommentsId());
         assertThat(detail.getRepliesCount()).isEqualTo(3L);
         assertThat(detail.getParentId()).isNull();
@@ -266,7 +266,7 @@ class CommentsIntegrationTest {
     @DisplayName("replies() - 특정 부모의 대댓글 목록 3개 반환, 각 repliesCount=0")
     void replies_특정부모의대댓글목록_repliesCount_0() {
         // given - 부모 댓글 1개 생성
-        CommentsRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
+        CommentCreateRequest parentRequest = buildRequest(post.getId(), null, "부모 댓글");
         commentsService.createComments(parentRequest);
 
         Comments parentComment = commentsRepository.findAll().stream()
@@ -276,12 +276,12 @@ class CommentsIntegrationTest {
 
         // 대댓글 3개 생성
         for (int i = 1; i <= 3; i++) {
-            CommentsRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 " + i);
+            CommentCreateRequest replyRequest = buildRequest(post.getId(), parentComment.getCommentsId(), "대댓글 " + i);
             commentsService.createComments(replyRequest);
         }
 
         // when
-        Page<CommentsDetail> result = commentsService.replies(parentComment.getCommentsId(), 10, 0);
+        Page<CommentDetailResponse> result = commentsService.replies(parentComment.getCommentsId(), 10, 0);
 
         // then - 대댓글 3개 반환
         assertThat(result.getTotalElements()).isEqualTo(3);

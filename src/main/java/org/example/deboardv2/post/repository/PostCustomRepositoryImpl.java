@@ -8,7 +8,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.likes.entity.QLikes;
-import org.example.deboardv2.post.dto.PostDetails;
+import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.example.deboardv2.post.entity.QPost;
 import org.example.deboardv2.rss.domain.FeedType;
 import org.example.deboardv2.rss.domain.QFeed;
@@ -98,7 +98,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .exists();
     }
 
-    private List<PostDetails> getPostList(Pageable pageable, BooleanExpression finalCondition) {
+    private List<PostDetailResponse> getPostList(Pageable pageable, BooleanExpression finalCondition) {
         return queryFactory
                 .select(postDetailsProjection())
                 .from(qPost)
@@ -125,9 +125,9 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         return total;
     }
 
-    private QBean<PostDetails> postDetailsProjection() {
+    private QBean<PostDetailResponse> postDetailsProjection() {
         return Projections.fields(
-                PostDetails.class,
+                PostDetailResponse.class,
                 qPost.id,
                 qPost.title,
                 qPost.content,
@@ -137,7 +137,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         );
     }
 
-    private List<PostDetails> getPostLikeList(Pageable pageable, BooleanExpression finalCondition) {
+    private List<PostDetailResponse> getPostLikeList(Pageable pageable, BooleanExpression finalCondition) {
         return queryFactory
                 .select(postDetailsProjection())
                 .from(qLikes)
@@ -166,17 +166,17 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> findAll(Pageable pageable) {
-        List<PostDetails> content = getPostList(pageable, getVisibilityCondition());
+    public Page<PostDetailResponse> findAll(Pageable pageable) {
+        List<PostDetailResponse> content = getPostList(pageable, getVisibilityCondition());
 
         long total = getTotalCount(getVisibilityCondition());
 
-        return new PageImpl<PostDetails>(content, pageable, total);
+        return new PageImpl<PostDetailResponse>(content, pageable, total);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PostDetails getPostDetails(Long postId) {
+    public PostDetailResponse getPostDetails(Long postId) {
         return queryFactory
                 .select(postDetailsProjection())
                 .from(qPost)
@@ -188,7 +188,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> searchPost(Pageable pageable, String searchType, String keyword) {
+    public Page<PostDetailResponse> searchPost(Pageable pageable, String searchType, String keyword) {
         // 수정: 공용 게시글 조건
         BooleanExpression visibility = getVisibilityCondition();
 
@@ -197,7 +197,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
         BooleanExpression finalCondition = visibility.and(searchCondition);
 
-        List<PostDetails> content = getPostList(pageable, finalCondition);
+        List<PostDetailResponse> content = getPostList(pageable, finalCondition);
 
         long total = getTotalCount(finalCondition);
 
@@ -206,14 +206,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> findLikesPosts(Pageable pageable) {
+    public Page<PostDetailResponse> findLikesPosts(Pageable pageable) {
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
             return Page.empty();
         }
         BooleanExpression finalCondition = qLikes.user.id.eq(currentUserId).and(getVisibilityCondition());
 
-        List<PostDetails> content = getPostLikeList(pageable, finalCondition);
+        List<PostDetailResponse> content = getPostLikeList(pageable, finalCondition);
 
         Long total = getTotalLikeCount(finalCondition);
 
@@ -222,7 +222,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> searchLikePosts(Pageable pageable, String searchType, String keyword) {
+    public Page<PostDetailResponse> searchLikePosts(Pageable pageable, String searchType, String keyword) {
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
             return Page.empty();
@@ -231,7 +231,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .and(getVisibilityCondition())
                 .and(buildSearchCondition(searchType, keyword));
 
-        List<PostDetails> content = getPostLikeList(pageable, finalCondition);
+        List<PostDetailResponse> content = getPostLikeList(pageable, finalCondition);
 
         Long total = getTotalLikeCount(finalCondition);
         return new PageImpl<>(content, pageable, total);

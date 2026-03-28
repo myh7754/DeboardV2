@@ -2,7 +2,7 @@ package org.example.deboardv2.likes.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.likes.repository.LikesRepository;
-import org.example.deboardv2.post.dto.PostCreateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.user.dto.SignupRequest;
@@ -75,7 +75,7 @@ class LikesConcurrencyTest {
         }
 
         // 게시글 1개 생성 (첫 번째 유저를 작성자로 사용)
-        PostCreateDto postCreateDto = new PostCreateDto("동시성 테스트 게시글", "내용");
+        PostCreateRequest postCreateDto = new PostCreateRequest("동시성 테스트 게시글", "내용");
         Post post = postRepository.save(Post.from(postCreateDto, users.get(0)));
         Long postId = post.getId();
 
@@ -132,7 +132,7 @@ class LikesConcurrencyTest {
         req.setPassword("password123");
         User user = userRepository.save(User.toEntity(req));
 
-        PostCreateDto postCreateDto = new PostCreateDto("중복 좋아요 테스트", "내용");
+        PostCreateRequest postCreateDto = new PostCreateRequest("중복 좋아요 테스트", "내용");
         Post post = postRepository.save(Post.from(postCreateDto, user));
         Long postId = post.getId();
         Long userId = user.getId();

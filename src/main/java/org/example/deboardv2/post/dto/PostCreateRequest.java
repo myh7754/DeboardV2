@@ -1,6 +1,5 @@
 package org.example.deboardv2.post.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -9,22 +8,21 @@ import org.example.deboardv2.post.entity.Post;
 
 @Data
 @NoArgsConstructor
-public class PostCreateDto {
+public class PostCreateRequest {
     @NotBlank
     @Size(max = 200)
-    public String title;
+    private String title;
 
     @NotBlank
-    public String content;
+    private String content;
 
-    @QueryProjection
-    public PostCreateDto(String title, String content) {
+    public PostCreateRequest(String title, String content) {
         this.title = title;
         this.content = content;
     }
 
-    public static PostCreateDto from(Post post) {
-        PostCreateDto dto = new PostCreateDto();
+    public static PostCreateRequest from(Post post) {
+        PostCreateRequest dto = new PostCreateRequest();
         dto.title = post.getTitle();
         dto.content = post.getContent();
         return dto;

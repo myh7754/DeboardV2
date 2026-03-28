@@ -2,7 +2,7 @@ package org.example.deboardv2.likes.service;
 
 import jakarta.persistence.EntityManager;
 import org.example.deboardv2.likes.repository.LikesRepository;
-import org.example.deboardv2.post.dto.PostCreateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
 import org.example.deboardv2.user.dto.SignupRequest;
@@ -58,7 +58,7 @@ class LikesServiceIntegrationTest {
         signupRequest.setPassword("password123");
         testUser = userRepository.save(User.toEntity(signupRequest));
 
-        PostCreateDto postCreateDto = new PostCreateDto("테스트 게시글", "테스트 내용");
+        PostCreateRequest postCreateDto = new PostCreateRequest("테스트 게시글", "테스트 내용");
         testPost = postRepository.save(Post.from(postCreateDto, testUser));
     }
 

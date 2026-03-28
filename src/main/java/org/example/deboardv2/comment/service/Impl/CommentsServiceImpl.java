@@ -1,8 +1,8 @@
 package org.example.deboardv2.comment.service.Impl;
 
 import lombok.RequiredArgsConstructor;
-import org.example.deboardv2.comment.dto.CommentsDetail;
-import org.example.deboardv2.comment.dto.CommentsRequest;
+import org.example.deboardv2.comment.dto.CommentDetailResponse;
+import org.example.deboardv2.comment.dto.CommentCreateRequest;
 import org.example.deboardv2.comment.entity.Comments;
 import org.example.deboardv2.comment.repository.CommentsCustomRepository;
 import org.example.deboardv2.comment.repository.CommentsRepository;
@@ -40,14 +40,14 @@ public class CommentsServiceImpl implements CommentsService {
     // 부모 댓글 페이징
     @Override
     @Transactional(readOnly = true)
-    public Page<CommentsDetail> readComments(Long postId, int size, int page) {
+    public Page<CommentDetailResponse> readComments(Long postId, int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
         return customRepository.findAll(postId, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CommentsDetail> replies(Long parentId, int size, int page) {
+    public Page<CommentDetailResponse> replies(Long parentId, int size, int page) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("commentsId").ascending());
         return customRepository.findReplies(parentId, pageable);
     }
@@ -56,8 +56,8 @@ public class CommentsServiceImpl implements CommentsService {
 
     @Override
     @Transactional
-    public void createComments(CommentsRequest request) {
-        Post referenceById = postRepository.getReferenceById(request.postId);
+    public void createComments(CommentCreateRequest request) {
+        Post referenceById = postRepository.getReferenceById(request.getPostId());
         Comments parent = null;
         if (request.getParentId() != null) {
             parent = getCommentsById(request.getParentId());
@@ -69,7 +69,7 @@ public class CommentsServiceImpl implements CommentsService {
 
     @Override
     @Transactional
-    public void updateComments(CommentsRequest request, Long commentId) {
+    public void updateComments(CommentCreateRequest request, Long commentId) {
         authService.authCheck(commentId, "COMMENT");
         Comments commentsById = getCommentsById(commentId);
         commentsById.updateContent(request);

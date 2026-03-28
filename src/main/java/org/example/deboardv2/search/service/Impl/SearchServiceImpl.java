@@ -1,7 +1,7 @@
 package org.example.deboardv2.search.service.Impl;
 
 import lombok.RequiredArgsConstructor;
-import org.example.deboardv2.post.dto.PostDetails;
+import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.search.service.SearchService;
 import org.springframework.data.domain.Page;
@@ -18,17 +18,17 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> search(String searchType, String search, int page, int size) {
+    public Page<PostDetailResponse> search(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<PostDetails> postDetails = postCustomRepository.searchPost(pageable, searchType, search);
+        Page<PostDetailResponse> postDetails = postCustomRepository.searchPost(pageable, searchType, search);
         return postDetails;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> searchLikePosts(String searchType, String search, int page, int size) {
+    public Page<PostDetailResponse> searchLikePosts(String searchType, String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<PostDetails> postDetails = postCustomRepository.searchLikePosts(pageable, searchType, search);
+        Page<PostDetailResponse> postDetails = postCustomRepository.searchLikePosts(pageable, searchType, search);
         return postDetails;
     }
 

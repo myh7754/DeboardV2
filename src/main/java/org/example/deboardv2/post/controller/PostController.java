@@ -3,9 +3,9 @@ package org.example.deboardv2.post.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.post.dto.PostCreateDto;
-import org.example.deboardv2.post.dto.PostDetails;
-import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
+import org.example.deboardv2.post.dto.PostDetailResponse;
+import org.example.deboardv2.post.dto.PostUpdateRequest;
 import jakarta.validation.Valid;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.search.service.SearchService;
@@ -33,7 +33,7 @@ public class PostController {
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         // sort = createdAt, desc -> ["createdAt", "desc"]
-        Page<PostDetails> postDtos;
+        Page<PostDetailResponse> postDtos;
 
         if (keyword == null || keyword.isBlank()) {
             postDtos = postService.readAll(size, page);
@@ -46,19 +46,19 @@ public class PostController {
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 게시글을 조회합니다.")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<?> getPosts(@PathVariable Long postId) {
-        PostDetails postDtoById = postService.getPostDtoById(postId);
+        PostDetailResponse postDtoById = postService.getPostDtoById(postId);
         return ResponseEntity.ok(postDtoById);
     }
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 작성합니다.")
     @PostMapping("/posts")
-    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateDto postDto) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postDto) {
         return ResponseEntity.ok(postService.save(postDto));
     }
 
     @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")
     @PutMapping("/posts/{postId}")
-    public ResponseEntity<?> updatePost(@Valid @RequestBody PostUpdateDto postDto, @PathVariable Long postId) {
+    public ResponseEntity<?> updatePost(@Valid @RequestBody PostUpdateRequest postDto, @PathVariable Long postId) {
         postService.update(postDto, postId);
         return ResponseEntity.ok().build();
     }
@@ -79,7 +79,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
-        Page<PostDetails> postDtos;
+        Page<PostDetailResponse> postDtos;
         if (keyword == null || keyword.isBlank()) {
             postDtos = postService.readLikesPosts(size, page);
         } else {

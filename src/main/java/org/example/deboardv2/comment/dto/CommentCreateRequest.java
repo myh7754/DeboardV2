@@ -5,12 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CommentsRequest {
+public class CommentCreateRequest {
     @NotNull
-    public Long postId;
+    private Long postId;
 
-    public Long parentId;
+    private Long parentId;
 
     @NotBlank
-    public String content;
+    private String content;
 }

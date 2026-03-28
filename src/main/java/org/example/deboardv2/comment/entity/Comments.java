@@ -1,8 +1,10 @@
 package org.example.deboardv2.comment.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
-import org.example.deboardv2.comment.dto.CommentsRequest;
+import lombok.NoArgsConstructor;
+import org.example.deboardv2.comment.dto.CommentCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.User;
@@ -12,6 +14,7 @@ import java.util.List;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comments extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,16 +37,16 @@ public class Comments extends BaseEntity {
     private List<Comments> children = new ArrayList<>();
 
 
-    public static Comments from(CommentsRequest dto, User user, Post post, Comments parent) {
+    public static Comments from(CommentCreateRequest dto, User user, Post post, Comments parent) {
         Comments comments = new Comments();
-        comments.content = dto.content;
+        comments.content = dto.getContent();
         comments.author = user;
         comments.post = post;
         comments.parent = parent;
         return comments;
     }
 
-    public void updateContent(CommentsRequest dto) {
-        this.content = dto.content;
+    public void updateContent(CommentCreateRequest dto) {
+        this.content = dto.getContent();
     }
 }

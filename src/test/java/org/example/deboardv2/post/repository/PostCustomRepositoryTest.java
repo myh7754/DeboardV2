@@ -2,8 +2,8 @@ package org.example.deboardv2.post.repository;
 
 import org.example.deboardv2.likes.entity.Likes;
 import org.example.deboardv2.likes.repository.LikesRepository;
-import org.example.deboardv2.post.dto.PostDetails;
-import org.example.deboardv2.post.dto.PostCreateDto;
+import org.example.deboardv2.post.dto.PostDetailResponse;
+import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.FeedSubscription;
@@ -79,16 +79,16 @@ class PostCustomRepositoryTest {
     void setUp() {
         // 구독자 User 생성
         SignupRequest subscriberReq = new SignupRequest();
-        subscriberReq.nickname = "subscriber_nick";
-        subscriberReq.email = "subscriber@test.com";
-        subscriberReq.password = "password123";
+        subscriberReq.setNickname("subscriber_nick");
+        subscriberReq.setEmail("subscriber@test.com");
+        subscriberReq.setPassword("password123");
         subscriberUser = userRepository.save(User.toEntity(subscriberReq));
 
         // 비구독자 User 생성
         SignupRequest nonSubReq = new SignupRequest();
-        nonSubReq.nickname = "nonsub_nick";
-        nonSubReq.email = "nonsub@test.com";
-        nonSubReq.password = "password123";
+        nonSubReq.setNickname("nonsub_nick");
+        nonSubReq.setEmail("nonsub@test.com");
+        nonSubReq.setPassword("password123");
         nonSubscriberUser = userRepository.save(User.toEntity(nonSubReq));
 
         // PUBLIC Feed 생성
@@ -147,7 +147,7 @@ class PostCustomRepositoryTest {
         ));
 
         // User 직접 작성 게시글 (author != null, feed == null)
-        PostCreateDto postCreateDto = new PostCreateDto();
+        PostCreateRequest postCreateDto = new PostCreateRequest();
         postCreateDto.setTitle("유저 직접 작성 제목");
         postCreateDto.setContent("유저 직접 작성 내용");
         userAuthoredPost = postRepository.save(Post.from(postCreateDto, subscriberUser));
@@ -174,11 +174,11 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.findAll(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findAll(PAGE);
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(publicFeedPost.getId());       // PUBLIC 피드 게시글 노출
@@ -194,11 +194,11 @@ class PostCustomRepositoryTest {
         setAuthentication(subscriberUser);
 
         // when
-        Page<PostDetails> result = postCustomRepository.findAll(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findAll(PAGE);
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(privateSubscribedPost.getId()); // 구독 PRIVATE 피드 게시글 포함
@@ -213,11 +213,11 @@ class PostCustomRepositoryTest {
         setAuthentication(nonSubscriberUser);
 
         // when
-        Page<PostDetails> result = postCustomRepository.findAll(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findAll(PAGE);
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).doesNotContain(privateSubscribedPost.getId()); // PRIVATE 피드 미노출
@@ -233,11 +233,11 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchPost(PAGE, "title", "공개피드");
+        Page<PostDetailResponse> result = postCustomRepository.searchPost(PAGE, "title", "공개피드");
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(publicFeedPost.getId());
@@ -251,11 +251,11 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchPost(PAGE, "content", "공개피드 내용");
+        Page<PostDetailResponse> result = postCustomRepository.searchPost(PAGE, "content", "공개피드 내용");
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(publicFeedPost.getId());
@@ -269,20 +269,20 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when - User nickname 검색 (user authored post)
-        Page<PostDetails> userNicknameResult = postCustomRepository.searchPost(PAGE, "author", "subscriber_nick");
+        Page<PostDetailResponse> userNicknameResult = postCustomRepository.searchPost(PAGE, "author", "subscriber_nick");
 
         // then
         assertThat(userNicknameResult.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList())
                 .contains(userAuthoredPost.getId());
 
         // when - ExternalAuthor name 검색
-        Page<PostDetails> externalAuthorResult = postCustomRepository.searchPost(PAGE, "author", "외부작가닉네임");
+        Page<PostDetailResponse> externalAuthorResult = postCustomRepository.searchPost(PAGE, "author", "외부작가닉네임");
 
         // then
         assertThat(externalAuthorResult.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList())
                 .contains(publicFeedPost.getId())
                 .contains(externalAuthorPost.getId());
@@ -295,11 +295,11 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when - "외부작가"는 externalAuthorPost의 제목에 포함됨
-        Page<PostDetails> result = postCustomRepository.searchPost(PAGE, "titleContent", "외부작가");
+        Page<PostDetailResponse> result = postCustomRepository.searchPost(PAGE, "titleContent", "외부작가");
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(externalAuthorPost.getId());
@@ -312,13 +312,13 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchPost(PAGE, "title", "");
+        Page<PostDetailResponse> result = postCustomRepository.searchPost(PAGE, "title", "");
 
         // then
         // 비인증이므로 PUBLIC + author있는 게시글만 조회
         assertThat(result.getTotalElements()).isGreaterThan(0);
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).doesNotContain(privateSubscribedPost.getId()); // PRIVATE 피드 미노출
@@ -333,12 +333,12 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchPost(PAGE, "title", null);
+        Page<PostDetailResponse> result = postCustomRepository.searchPost(PAGE, "title", null);
 
         // then
         assertThat(result.getTotalElements()).isGreaterThan(0);
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).doesNotContain(privateSubscribedPost.getId());
@@ -354,7 +354,7 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.findLikesPosts(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findLikesPosts(PAGE);
 
         // then
         assertThat(result.isEmpty()).isTrue();
@@ -371,11 +371,11 @@ class PostCustomRepositoryTest {
         setAuthentication(subscriberUser);
 
         // when
-        Page<PostDetails> result = postCustomRepository.findLikesPosts(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findLikesPosts(PAGE);
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(publicFeedPost.getId());
@@ -393,7 +393,7 @@ class PostCustomRepositoryTest {
         setAuthentication(nonSubscriberUser);
 
         // when
-        Page<PostDetails> result = postCustomRepository.findLikesPosts(PAGE);
+        Page<PostDetailResponse> result = postCustomRepository.findLikesPosts(PAGE);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(0);
@@ -408,7 +408,7 @@ class PostCustomRepositoryTest {
         SecurityContextHolder.clearContext();
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchLikePosts(PAGE, "title", "공개");
+        Page<PostDetailResponse> result = postCustomRepository.searchLikePosts(PAGE, "title", "공개");
 
         // then
         assertThat(result.isEmpty()).isTrue();
@@ -424,11 +424,11 @@ class PostCustomRepositoryTest {
         setAuthentication(subscriberUser);
 
         // when - "공개피드" keyword로 제목 검색
-        Page<PostDetails> result = postCustomRepository.searchLikePosts(PAGE, "title", "공개피드");
+        Page<PostDetailResponse> result = postCustomRepository.searchLikePosts(PAGE, "title", "공개피드");
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(publicFeedPost.getId());
@@ -445,11 +445,11 @@ class PostCustomRepositoryTest {
         setAuthentication(subscriberUser);
 
         // when
-        Page<PostDetails> result = postCustomRepository.searchLikePosts(PAGE, "content", "유저 직접");
+        Page<PostDetailResponse> result = postCustomRepository.searchLikePosts(PAGE, "content", "유저 직접");
 
         // then
         List<Long> postIds = result.getContent().stream()
-                .map(PostDetails::getId)
+                .map(PostDetailResponse::getId)
                 .toList();
 
         assertThat(postIds).contains(userAuthoredPost.getId());

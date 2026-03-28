@@ -7,8 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.comment.dto.CommentsDetail;
-import org.example.deboardv2.comment.dto.CommentsRequest;
+import org.example.deboardv2.comment.dto.CommentDetailResponse;
+import org.example.deboardv2.comment.dto.CommentCreateRequest;
 import org.example.deboardv2.comment.service.CommentsService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -36,7 +36,7 @@ public class CommentsController {
                                          @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
 
-        Page<CommentsDetail> commentsDetails = commentsService.readComments(postId, size, page);
+        Page<CommentDetailResponse> commentsDetails = commentsService.readComments(postId, size, page);
         return ResponseEntity.ok(commentsDetails);
     }
 
@@ -46,13 +46,13 @@ public class CommentsController {
                                         @RequestParam(defaultValue = "0") int page,
                                         @RequestParam(defaultValue = "10") int size
     ) {
-        Page<CommentsDetail> replies = commentsService.replies(commentsId, size, page);
+        Page<CommentDetailResponse> replies = commentsService.replies(commentsId, size, page);
         return ResponseEntity.ok(replies);
     }
 
     @Operation(summary = "댓글 작성", description = "새로운 댓글을 작성합니다.")
     @PostMapping
-    public ResponseEntity<?> createComment(@Valid @RequestBody CommentsRequest comment) {
+    public ResponseEntity<?> createComment(@Valid @RequestBody CommentCreateRequest comment) {
         commentsService.createComments(comment);
         return ResponseEntity.ok().build();
     }
@@ -66,7 +66,7 @@ public class CommentsController {
 
     @Operation(summary = "댓글 수정", description = "댓글 ID로 댓글 내용을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateComment(@Valid @RequestBody CommentsRequest comment, @PathVariable Long id) {
+    public ResponseEntity<?> updateComment(@Valid @RequestBody CommentCreateRequest comment, @PathVariable Long id) {
         commentsService.updateComments(comment, id);
         return ResponseEntity.ok().build();
     }

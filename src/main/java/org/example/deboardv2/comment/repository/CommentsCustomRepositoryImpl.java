@@ -5,7 +5,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.example.deboardv2.comment.dto.CommentsDetail;
+import org.example.deboardv2.comment.dto.CommentDetailResponse;
 import org.example.deboardv2.comment.entity.QComments;
 import org.example.deboardv2.user.entity.QUser;
 import org.springframework.data.domain.Page;
@@ -26,10 +26,10 @@ public class CommentsCustomRepositoryImpl implements CommentsCustomRepository {
 
 
     @Override
-    public Page<CommentsDetail> findAll(Long postId, Pageable pageable) {
-        List<CommentsDetail> content = queryFactory
+    public Page<CommentDetailResponse> findAll(Long postId, Pageable pageable) {
+        List<CommentDetailResponse> content = queryFactory
                 .select(Projections.fields(
-                        CommentsDetail.class,
+                        CommentDetailResponse.class,
                         qComments.commentsId.as("commentsId"), // <- alias 지정
                         qComments.content,
                         qComments.createdAt,
@@ -65,10 +65,10 @@ public class CommentsCustomRepositoryImpl implements CommentsCustomRepository {
     }
     
     // 특정 댓글의 대댓글 조회
-    public Page<CommentsDetail> findReplies(Long parentId, Pageable pageable) {
-        List<CommentsDetail> replies = queryFactory
+    public Page<CommentDetailResponse> findReplies(Long parentId, Pageable pageable) {
+        List<CommentDetailResponse> replies = queryFactory
                 .select(Projections.constructor(
-                        CommentsDetail.class,
+                        CommentDetailResponse.class,
                         qComments.commentsId.as("commentsId"),
                         qComments.content,
                         qComments.createdAt,

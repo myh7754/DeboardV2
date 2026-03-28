@@ -3,9 +3,9 @@ package org.example.deboardv2.post.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.deboardv2.post.dto.PostCreateDto;
-import org.example.deboardv2.post.dto.PostDetails;
-import org.example.deboardv2.post.dto.PostUpdateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
+import org.example.deboardv2.post.dto.PostDetailResponse;
+import org.example.deboardv2.post.dto.PostUpdateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostJdbcRepository;
@@ -37,10 +37,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostDetails save(PostCreateDto post) {
+    public PostDetailResponse save(PostCreateRequest post) {
         User user = userService.getCurrentUser();
         Post save = postRepository.save(Post.from(post, user));
-        return PostDetails.from(save);
+        return PostDetailResponse.from(save);
     }
 
     @Override
@@ -64,22 +64,22 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public PostDetails getPostDtoById(Long postId) {
+    public PostDetailResponse getPostDtoById(Long postId) {
         return postCustomRepository.getPostDetails(postId);
     }
 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> readAll(int size, int page) {
+    public Page<PostDetailResponse> readAll(int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
-        Page<PostDetails> postLists = postCustomRepository.findAll(pageable);
+        Page<PostDetailResponse> postLists = postCustomRepository.findAll(pageable);
         return postLists;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetails> readLikesPosts(int size, int page) {
+    public Page<PostDetailResponse> readLikesPosts(int size, int page) {
         Pageable pageable = PageRequest.of(page,size, Sort.by("id").descending());
 
         return postCustomRepository.findLikesPosts(pageable);
@@ -95,7 +95,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void update(PostUpdateDto dto, Long postId) {
+    public void update(PostUpdateRequest dto, Long postId) {
         authService.authCheck(postId, "POST");
         Post post = getPostById(postId);
         post.update(dto);

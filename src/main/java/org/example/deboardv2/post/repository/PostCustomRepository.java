@@ -1,14 +1,14 @@
 package org.example.deboardv2.post.repository;
 
-import org.example.deboardv2.post.dto.PostDetails;
+import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface PostCustomRepository {
-    Page<PostDetails> findAll(Pageable pageable);
-    PostDetails getPostDetails(Long postId);
-    Page<PostDetails> searchPost(Pageable pageable, String searchType,String keyword);
-    Page<PostDetails> findLikesPosts(Pageable pageable);
-    Page<PostDetails> searchLikePosts( Pageable pageable, String searchType, String keyword);
+    Page<PostDetailResponse> findAll(Pageable pageable);
+    PostDetailResponse getPostDetails(Long postId);
+    Page<PostDetailResponse> searchPost(Pageable pageable, String searchType,String keyword);
+    Page<PostDetailResponse> findLikesPosts(Pageable pageable);
+    Page<PostDetailResponse> searchLikePosts( Pageable pageable, String searchType, String keyword);
 
 }

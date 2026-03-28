@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostDetails {
+public class PostDetailResponse {
     Long id;
     String title;
     String content;
@@ -19,8 +19,8 @@ public class PostDetails {
     LocalDateTime createdAt;
     int likeCount;
 
-    public static PostDetails from(Post post) {
-        PostDetails postDetails = new PostDetails();
+    public static PostDetailResponse from(Post post) {
+        PostDetailResponse postDetails = new PostDetailResponse();
         postDetails.setId(post.getId());
         postDetails.setTitle(post.getTitle());
         postDetails.setContent(post.getContent());

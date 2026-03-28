@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class PostUpdateDto {
+public class PostUpdateRequest {
     @NotBlank
     @Size(max = 200)
-    public String title;
+    private String title;
 
     @NotBlank
-    public String content;
+    private String content;
 }
