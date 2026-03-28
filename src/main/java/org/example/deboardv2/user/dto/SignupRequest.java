@@ -9,13 +9,13 @@ import lombok.Data;
 public class SignupRequest {
     @NotBlank
     @Size(min = 2, max = 20)
-    public String nickname;
+    private String nickname;
 
     @NotBlank
     @Size(min = 8, max = 100)
-    public String password;
+    private String password;
 
     @NotBlank
     @Email
-    public String email;
+    private String email;
 }

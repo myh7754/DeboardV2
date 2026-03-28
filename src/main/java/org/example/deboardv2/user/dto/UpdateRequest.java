@@ -7,13 +7,13 @@ import lombok.Data;
 @Data
 public class UpdateRequest {
     @Size(min = 8, max = 100)
-    public String password;
+    private String password;
 
     @Size(min = 2, max = 20)
-    public String nickname;
+    private String nickname;
 
-    public String number;
+    private String number;
 
     @Email
-    public String email;
+    private String email;
 }
