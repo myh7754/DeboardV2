@@ -14,6 +14,7 @@ import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.User;
+import org.example.deboardv2.user.service.AuthService;
 import org.example.deboardv2.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +30,7 @@ import java.util.List;
 @Slf4j
 public class PostServiceImpl implements PostService {
     private final UserService userService;
+    private final AuthService authService;
     private final PostRepository postRepository;
     private final PostCustomRepository postCustomRepository;
     private final PostJdbcRepository postJdbcRepository;
@@ -87,24 +89,16 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void delete(Long postId) {
-        int deletedCount = postRepository.deleteByIdAndAuthorId(postId, userService.getCurrentUserId());
-        if (deletedCount == 0) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
+        authService.authCheck(postId, "POST");
+        postRepository.deleteById(postId);
     }
 
     @Override
     @Transactional
     public void update(PostUpdateDto dto, Long postId) {
-        int updateCount = postRepository.updateByIdAndAuthorId(
-                postId,
-                dto.title,
-                dto.content,
-                userService.getCurrentUserId()
-        );
-        if (updateCount == 0) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
+        authService.authCheck(postId, "POST");
+        Post post = getPostById(postId);
+        post.update(dto);
     }
 
 

@@ -34,9 +34,8 @@ public class RssScheduler {
     private final PostService postService;
     private final ExternalAuthorService externalAuthorService;
 
-        @Scheduled(cron = "0 0 * * * *") // 매 정시마다 실행
-//    @Scheduled(cron = "0 0/5 * * * *") // 5분마다 실행
 //    @Scheduled(fixedRate = 60_000) // 1분마다 실행
+    @Scheduled(cron = "${rss.schedule.cron}") // 매 정시마다 실행
     public void fetchAllRssFeeds() throws Exception {
         List<Feed> allFeeds = feedService.getAllFeeds();
         List<CompletableFuture<Long>> futures = new ArrayList<>();
