@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.service.PostService;
+import org.example.deboardv2.redis.RedisKeyConstants;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.dto.FeedFetchResult;
@@ -44,7 +45,7 @@ public class AsyncRssService {
             if (!newEntries.isEmpty()) {
                 List<Post> rssPosts = rssParserService.parseNewEntries(newEntries, selectParser, feed, rawMap);
                 postService.saveBatch(rssPosts);
-                String key = "rss:feed:" + feed.getId();
+                String key = RedisKeyConstants.RSS_FEED + feed.getId();
                 List<String> linksToCache = rssPosts.stream()
                         .map(Post::getLink)
                         .toList();
@@ -100,7 +101,7 @@ public class AsyncRssService {
                 postService.saveBatch(rssPosts);
 
                 // Redis 캐시 갱신
-                String key = "rss:feed:" + feed.getId();
+                String key = RedisKeyConstants.RSS_FEED + feed.getId();
                 List<String> linksToCache = rssPosts.stream().map(Post::getLink).toList();
                 redisService.addAllToZSet(key, linksToCache, 50);
 

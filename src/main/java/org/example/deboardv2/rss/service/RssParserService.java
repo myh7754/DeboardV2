@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.redis.RedisKeyConstants;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.rss.domain.Feed;
 import org.example.deboardv2.rss.domain.RssPost;
@@ -119,7 +120,7 @@ public class RssParserService {
 
     @Transactional(readOnly = true)
     public List<SyndEntry> extractPostListImprove(Feed dtoFeed, List<SyndEntry> entries) {
-        String key = "rss:feed:" + dtoFeed.getId();
+        String key = RedisKeyConstants.RSS_FEED + dtoFeed.getId();
         List<String> links = entries.stream()
                         .map(SyndEntry::getLink)
                         .toList();

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.comment.repository.CommentsRepository;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.redis.RedisKeyConstants;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
@@ -40,21 +41,18 @@ public class AuthServiceImpl implements AuthService {
     private final RedisService redisService;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
-    private static final String EMAIL_PREFIX = "email:";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtConfig jwtConfig;
     private final PostRepository postRepository;
     private final CommentsRepository commentsRepository;
-
-    //회원가입
     @Override
     @Transactional
     public User signUp(SignupRequest signupRequest) {
         String email  = signupRequest.getEmail();
         try {
             // 이메일 미인증시 이메일 인증 요구
-            if (!redisService.checkAndDelete(EMAIL_PREFIX + "certified:" + email)) {
+            if (!redisService.checkAndDelete(RedisKeyConstants.EMAIL_AUTH + "certified:" + email)) {
                 throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
             }
             signupRequest.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
@@ -98,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
         }
         try {
             TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
-            redisService.setValueWithExpire("refresh:"+tokenBody.getMemberId(), refresh, jwtConfig.getValidation().getRefresh());
+            redisService.setValueWithExpire(RedisKeyConstants.REFRESH_TOKEN + tokenBody.getMemberId(), refresh, jwtConfig.getValidation().getRefresh());
         } catch (Exception e) {
             // 토큰 파싱 실패 시 (만료된 토큰 등) 로그아웃 처리 계속 진행
             log.debug("로그아웃 시 토큰 파싱 실패 (만료된 토큰일 수 있음): {}", e.getMessage());
@@ -117,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
         if (duplicateEmail(email)) {
             throw new CustomException(ErrorCode.EMAIL_DUPLICATED);
         }
-        redisService.setValueWithExpire(EMAIL_PREFIX+email,code, Duration.ofMinutes(3));
+        redisService.setValueWithExpire(RedisKeyConstants.EMAIL_AUTH + email, code, Duration.ofMinutes(3));
         mailService.sendSimpleMailMessage(email, code);
         return email;
     }
@@ -126,12 +124,12 @@ public class AuthServiceImpl implements AuthService {
     // 인증번호 검사
     @Override
     public Boolean validEmail(String email, String inputCode) {
-        String redisKey = EMAIL_PREFIX + email;
+        String redisKey = RedisKeyConstants.EMAIL_AUTH + email;
         Object value = redisService.getValue(redisKey);
         if (value == null || !value.equals(inputCode)) {
             throw new CustomException(ErrorCode.EMAIL_VERIFICATION_ERROR);
         }
-        redisService.setValue(EMAIL_PREFIX+"certified:"+email,true);
+        redisService.setValue(RedisKeyConstants.EMAIL_AUTH + "certified:" + email, true);
         redisService.deleteValue(redisKey);
         return true;
     }
@@ -142,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
         if (b) {
             TokenBody tokenBody = jwtTokenProvider.parseJwt(refresh);
             // 만약 이게 있다면 블랙리스트에 등록된거
-            Object blackList = redisService.getValue("refresh:" + tokenBody.getMemberId());
+            Object blackList = redisService.getValue(RedisKeyConstants.REFRESH_TOKEN + tokenBody.getMemberId());
             if  (blackList != null && blackList.equals(refresh)) {
                 throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
             }

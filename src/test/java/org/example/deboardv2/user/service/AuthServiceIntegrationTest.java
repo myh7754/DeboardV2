@@ -1,8 +1,9 @@
 package org.example.deboardv2.user.service;
 
-import org.example.deboardv2.post.dto.PostCreateDto;
+import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.redis.RedisKeyConstants;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
@@ -60,7 +61,6 @@ class AuthServiceIntegrationTest {
     @MockitoBean
     private MailService mailService;
 
-    private static final String EMAIL_PREFIX = "email:";
     private static final String TEST_EMAIL = "integration-test@example.com";
     private static final String TEST_NICKNAME = "integTestUser";
     private static final String TEST_PASSWORD = "password123";
@@ -97,7 +97,7 @@ class AuthServiceIntegrationTest {
     @DisplayName("signUp() - 이메일 인증 완료 후 정상 가입 시 User DB 저장 확인")
     void signUp_인증완료후_정상가입_DB저장() {
         // given
-        redisService.setValue(EMAIL_PREFIX + "certified:" + TEST_EMAIL, true);
+        redisService.setValue(RedisKeyConstants.EMAIL_AUTH + "certified:" + TEST_EMAIL, true);
 
         SignupRequest request = new SignupRequest();
         request.setEmail(TEST_EMAIL);
@@ -123,12 +123,12 @@ class AuthServiceIntegrationTest {
         firstRequest.setEmail("first@example.com");
         firstRequest.setNickname(TEST_NICKNAME);
         firstRequest.setPassword(TEST_PASSWORD);
-        redisService.setValue(EMAIL_PREFIX + "certified:first@example.com", true);
+        redisService.setValue(RedisKeyConstants.EMAIL_AUTH + "certified:first@example.com", true);
         authService.signUp(firstRequest);
 
         // 두 번째 사용자: 같은 닉네임, 다른 이메일
         String duplicateEmail = "duplicate@example.com";
-        redisService.setValue(EMAIL_PREFIX + "certified:" + duplicateEmail, true);
+        redisService.setValue(RedisKeyConstants.EMAIL_AUTH + "certified:" + duplicateEmail, true);
 
         SignupRequest duplicateRequest = new SignupRequest();
         duplicateRequest.setEmail(duplicateEmail);
@@ -221,12 +221,12 @@ class AuthServiceIntegrationTest {
         authService.sendEmailAuthCode(newEmail);
 
         // then
-        Object storedCode = redisService.getValue(EMAIL_PREFIX + newEmail);
+        Object storedCode = redisService.getValue(RedisKeyConstants.EMAIL_AUTH + newEmail);
         assertThat(storedCode).isNotNull();
         assertThat(storedCode.toString()).hasSize(6);
 
         // 정리
-        redisService.deleteValue(EMAIL_PREFIX + newEmail);
+        redisService.deleteValue(RedisKeyConstants.EMAIL_AUTH + newEmail);
     }
 
     // ============================================================
@@ -239,18 +239,18 @@ class AuthServiceIntegrationTest {
         // given
         String verifyEmail = "verify@example.com";
         String code = "123456";
-        redisService.setValueWithExpire(EMAIL_PREFIX + verifyEmail, code, Duration.ofMinutes(3));
+        redisService.setValueWithExpire(RedisKeyConstants.EMAIL_AUTH + verifyEmail, code, Duration.ofMinutes(3));
 
         // when
         Boolean result = authService.validEmail(verifyEmail, code);
 
         // then
         assertThat(result).isTrue();
-        assertThat(redisService.getValue(EMAIL_PREFIX + "certified:" + verifyEmail)).isNotNull();
-        assertThat(redisService.getValue(EMAIL_PREFIX + verifyEmail)).isNull();
+        assertThat(redisService.getValue(RedisKeyConstants.EMAIL_AUTH + "certified:" + verifyEmail)).isNotNull();
+        assertThat(redisService.getValue(RedisKeyConstants.EMAIL_AUTH + verifyEmail)).isNull();
 
         // 정리
-        redisService.deleteValue(EMAIL_PREFIX + "certified:" + verifyEmail);
+        redisService.deleteValue(RedisKeyConstants.EMAIL_AUTH + "certified:" + verifyEmail);
     }
 
     @Test
@@ -260,7 +260,7 @@ class AuthServiceIntegrationTest {
         String verifyEmail = "verify2@example.com";
         String correctCode = "654321";
         String wrongCode = "000000";
-        redisService.setValueWithExpire(EMAIL_PREFIX + verifyEmail, correctCode, Duration.ofMinutes(3));
+        redisService.setValueWithExpire(RedisKeyConstants.EMAIL_AUTH + verifyEmail, correctCode, Duration.ofMinutes(3));
 
         // when & then
         CustomException exception = assertThrows(CustomException.class,
@@ -268,7 +268,7 @@ class AuthServiceIntegrationTest {
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EMAIL_VERIFICATION_ERROR);
 
         // 정리
-        redisService.deleteValue(EMAIL_PREFIX + verifyEmail);
+        redisService.deleteValue(RedisKeyConstants.EMAIL_AUTH + verifyEmail);
     }
 
     // ============================================================
@@ -339,7 +339,7 @@ class AuthServiceIntegrationTest {
         authService.logout(refreshToken);
 
         // then
-        Object blacklisted = redisService.getValue("refresh:" + userId);
+        Object blacklisted = redisService.getValue(RedisKeyConstants.REFRESH_TOKEN + userId);
         assertThat(blacklisted).isNotNull();
         assertThat(blacklisted.toString()).isEqualTo(refreshToken);
     }
@@ -355,7 +355,7 @@ class AuthServiceIntegrationTest {
         User author = createTestUser(TEST_EMAIL, TEST_NICKNAME, TEST_PASSWORD);
         setSecurityContext(author.getId());
 
-        PostCreateDto postDto = new PostCreateDto("테스트 게시글", "내용");
+        PostCreateRequest postDto = new PostCreateRequest("테스트 게시글", "내용");
         Post post = Post.from(postDto, author);
         Post savedPost = postRepository.save(post);
 
@@ -370,7 +370,7 @@ class AuthServiceIntegrationTest {
         User author = createTestUser(TEST_EMAIL, TEST_NICKNAME, TEST_PASSWORD);
         User other = createTestUser("other@example.com", "otherUser", TEST_PASSWORD);
 
-        PostCreateDto postDto = new PostCreateDto("테스트 게시글", "내용");
+        PostCreateRequest postDto = new PostCreateRequest("테스트 게시글", "내용");
         Post post = Post.from(postDto, author);
         Post savedPost = postRepository.save(post);
 

@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.redis.RedisKeyConstants;
 import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.user.dto.MemberDetails;
 import org.example.deboardv2.user.dto.TokenBody;
@@ -47,7 +48,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
         // redis에 refresh 저장
-        redisService.setValueWithExpire("refresh:"+memberDetails.getId(), refresh, jwtConfig.getValidation().getRefresh());
+        redisService.setValueWithExpire(RedisKeyConstants.REFRESH_TOKEN + memberDetails.getId(), refresh, jwtConfig.getValidation().getRefresh());
 
         getRedirectStrategy().sendRedirect(request,response,targetUrl);
     }

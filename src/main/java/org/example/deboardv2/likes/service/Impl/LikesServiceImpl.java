@@ -32,8 +32,6 @@ public class LikesServiceImpl implements LikeService {
     private final UserService userService;
     private final PostRepository postRepository;
     private final RedisService redisService;
-    private static final String LIKES_COUNT_KEY = "post:likes:count:"; // 총 개수
-    private static final String CHANGED_KEY = "post:changed:ids";      // 변경된 게시물 목록
 
 
     @Override
