@@ -37,8 +37,15 @@ out/
 .vscode/
 /src/main/resources/application-*.yml
 /src/main/resources/logback-spring.xml
+/src/test/resources/application-test.yml
 
 *.log
 logs/
 log/
 
+리팩토링.md
+
+### Claude Code ###
+.claude/
+.mcp.json
+IfLotto/
