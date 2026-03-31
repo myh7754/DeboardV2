@@ -37,4 +37,8 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 
     void deleteByFeed(Feed feed);
 
+    @Modifying
+    @Query("UPDATE Post p SET p.isPublic = :isPublic WHERE p.feed.id = :feedId")
+    void updateIsPublicByFeedId(@Param("feedId") Long feedId, @Param("isPublic") boolean isPublic);
+
 }

@@ -23,4 +23,8 @@ public class Feed {
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     private boolean isActive = true;
 
+    public void updateFeedType(FeedType feedType) {
+        this.feedType = feedType;
+    }
+
 }

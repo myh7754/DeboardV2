@@ -2,6 +2,7 @@ package org.example.deboardv2.rss.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.deboardv2.rss.domain.FeedType;
 import org.example.deboardv2.rss.service.FeedService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,12 @@ public class FeedController {
     @DeleteMapping("/user-feed/{id}")
     public ResponseEntity<?> deleteUserFeed(@PathVariable Long id) throws Exception {
         feedService.unsubscribe(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/feed/{feedId}/type")
+    public ResponseEntity<?> changeFeedType(@PathVariable Long feedId, @RequestParam FeedType feedType) {
+        feedService.changeFeedType(feedId, feedType);
         return ResponseEntity.ok().build();
     }
 

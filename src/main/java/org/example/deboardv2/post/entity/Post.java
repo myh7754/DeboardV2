@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.dto.PostUpdateRequest;
 import org.example.deboardv2.rss.domain.Feed;
+import org.example.deboardv2.rss.domain.FeedType;
 import org.example.deboardv2.system.baseentity.BaseEntity;
 import org.example.deboardv2.user.entity.ExternalAuthor;
 import org.example.deboardv2.user.entity.User;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
+@Table(indexes = @Index(name = "idx_post_is_public_created_at", columnList = "is_public, created_at DESC"))
 public class Post extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,11 +51,15 @@ public class Post extends BaseEntity {
     @Column(name = "like_count", nullable = false)
     private int likeCount = 0;
 
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private boolean isPublic;
+
     public static Post from(PostCreateRequest postDto, User user) {
         Post post = new Post();
         post.title = postDto.getTitle();
         post.content = postDto.getContent();
         post.author = user;
+        post.isPublic = true;
         return post;
     }
 
@@ -68,6 +74,7 @@ public class Post extends BaseEntity {
         post.externalAuthor = externalAuthor;
         post.setCreatedAt(createdAt); // BaseEntity에 createdAt 필드 있을 경우 보호된 setter 사용
         post.feed = feed;
+        post.isPublic = feed.getFeedType() == FeedType.PUBLIC;
         return post;
     }
 

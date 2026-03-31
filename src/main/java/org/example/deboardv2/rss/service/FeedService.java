@@ -131,6 +131,14 @@ public class FeedService {
     }
 
     @Transactional
+    public void changeFeedType(Long feedId, FeedType newType) {
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FEED_NOT_FOUND));
+        feed.updateFeedType(newType);
+        postRepository.updateIsPublicByFeedId(feedId, newType == FeedType.PUBLIC);
+    }
+
+    @Transactional
     public void disableFeeds(List<Long> failedIds) {
         if (failedIds != null && !failedIds.isEmpty()) {
             feedRepository.disableFeedsByIds(failedIds);

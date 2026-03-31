@@ -254,12 +254,13 @@ public class DummyDataLoader implements CommandLineRunner {
                     1L,                                 // user_id
                     "content" + i,                      // content
                     null,                               // image (NULL 허용)
-                    "title" + i                         // title
+                    "title" + i,                        // title
+                    true                                // is_public (사용자 작성 글은 항상 공개)
             });
 
             if (i % batchSize == 0) {
                 jdbcTemplate.batchUpdate(
-                        "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                         postBatch
                 );
                 postBatch.clear();
@@ -269,7 +270,7 @@ public class DummyDataLoader implements CommandLineRunner {
 
         if (!postBatch.isEmpty()) {
             jdbcTemplate.batchUpdate(
-                    "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO post (like_count, created_at, updated_at, user_id, content, image, title, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     postBatch
             );
         }

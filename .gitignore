@@ -43,8 +43,8 @@ out/
 logs/
 log/
 
-리팩토링.md
-
+docs/리팩토링.md
+docs/계획표.md
 ### Claude Code ###
 .claude/
 .mcp.json
