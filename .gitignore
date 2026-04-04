@@ -35,9 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
-/src/main/resources/application-*.yml
 /src/main/resources/logback-spring.xml
 /src/test/resources/application-test.yml
+.env
 
 *.log
 logs/
@@ -48,4 +48,3 @@ docs/계획표.md
 ### Claude Code ###
 .claude/
 .mcp.json
-IfLotto/
