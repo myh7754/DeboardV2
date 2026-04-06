@@ -126,3 +126,6 @@ management:
       base-path: /actuator
       exposure:
         include: "health,info,metrics,prometheus"
+  metrics:
+    tags:
+      application: deboard

@@ -1,5 +1,6 @@
 package org.example.deboardv2.system.monitor.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import net.ttddyy.dsproxy.ExecutionInfo;
 import net.ttddyy.dsproxy.QueryInfo;
@@ -9,8 +10,8 @@ import org.example.deboardv2.system.monitor.batchQuery.BatchContext;
 import org.example.deboardv2.system.monitor.batchQuery.BatchContextHolder;
 import org.example.deboardv2.system.monitor.query.RequestContext;
 import org.example.deboardv2.system.monitor.query.RequestContextHolder;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -21,6 +22,16 @@ import java.util.List;
 @Slf4j
 @Configuration
 public class DataSourceProxyConfig {
+
+    // spring.datasource.hikari.* 설정(maximum-pool-size 등)을 HikariDataSource에 바인딩
+    @Bean
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public HikariDataSource hikariDataSource(DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
+    }
+
     /*
      * 모든 쿼리를 interceptor하는 DataSource Proxy
      * - Hibernate 쿼리
@@ -28,10 +39,9 @@ public class DataSourceProxyConfig {
      * - 배치 작업 쿼리 */
     @Bean
     @Primary
-    public DataSource dataSource(DataSourceProperties properties) {
-        DataSource actualDataSource = properties.initializeDataSourceBuilder().build();
+    public DataSource dataSource(HikariDataSource hikariDataSource) {
         return ProxyDataSourceBuilder
-                .create(actualDataSource)
+                .create(hikariDataSource)
                 .name("query-monitoring-proxy")
                 .listener(new QueryCountExecutionListener())
                 .build();

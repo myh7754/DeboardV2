@@ -32,10 +32,10 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: yhfmg/deboard-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=yhfmg/deboard-backend:buildcache
+          cache-to: type=registry,ref=yhfmg/deboard-backend:buildcache,mode=max
 
-      # 5. EC2에서 바로 배포 (이미 EC2에서 실행 중이므로 SSH 불필요)
+      # 6. EC2에서 바로 배포 (이미 EC2에서 실행 중이므로 SSH 불필요)
       - name: Deploy
         run: |
           cd /home/myh7754/deboard

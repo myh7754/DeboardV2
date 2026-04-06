@@ -180,17 +180,83 @@ ORDER BY created_at DESC LIMIT 0, 10
 
 ```
 개선 전: VUS 100 시점부터 이미 포화 (RPS 15로 고착)
-개선 후: VUS 300까지 RPS 47~50 유지, 그 이후 HikariCP 커넥션 풀(40) 병목
+개선 후: VUS 300까지 RPS 47~50 유지, 그 이후 MySQL CPU 포화로 병목
+```
+
+---
+
+### 모니터링으로 병목 원인 추가 분석 (Grafana)
+
+인덱스 개선 후에도 VUS 300에서 평균 응답 4초가 남아있어 Grafana로 추가 분석.
+
+#### HikariCP 커넥션 상태 (VUS 300 부하 중)
+
+| 지표 | 값 | 의미 |
+|---|---|---|
+| Active Max | 10 | 실제 사용된 최대 커넥션 수 |
+| Idle Max | 10 | 풀 크기가 사실상 10으로 동작 |
+| Pending Max | **190** | 커넥션 기다린 스레드 최대 190개 |
+
+설정은 `maximum-pool-size: 40`이었으나 실제 풀이 10으로 동작한 원인을 분석함.
+
+#### 원인: DataSourceProxyConfig의 설정 미적용 버그
+
+`DataSourceProxyConfig`에서 DataSource를 수동 생성할 때 `DataSourceProperties`만 사용해
+`spring.datasource.hikari.*` 설정이 바인딩되지 않았음. HikariCP 기본값(10)으로 동작한 것.
+
+```java
+// 문제 코드: hikari.* 설정 무시됨
+DataSource actualDataSource = properties.initializeDataSourceBuilder().build();
+
+// 수정 코드: @ConfigurationProperties로 hikari.* 설정 바인딩
+@Bean
+@ConfigurationProperties(prefix = "spring.datasource.hikari")
+public HikariDataSource hikariDataSource(DataSourceProperties properties) {
+    return properties.initializeDataSourceBuilder()
+            .type(HikariDataSource.class)
+            .build();
+}
+```
+
+#### CPU 사용량 분석 (VUS 300 부하 중)
+
+| 지표 | 값 | 의미 |
+|---|---|---|
+| System CPU 평균 | 72.2% | 머신 전체 사용률 |
+| System CPU 최대 | **100%** | 부하 피크 시 머신 한계 도달 |
+| Process CPU 평균 | 3.4% | Spring은 대부분 DB 응답 대기 |
+| Process CPU 최대 | 64% | |
+
+#### 커넥션 풀 40으로 확장 시도 → 오히려 악화
+
+```
+pool=10 (기본): avg=4.15s, RPS=47/s
+pool=40 (확장): avg=4.47s, RPS=44/s
+```
+
+커넥션을 40으로 늘리자 MySQL이 동시에 처리해야 할 쿼리가 4배 증가,
+이미 포화 상태인 CPU에서 스레드 경합이 늘어나 오히려 처리량 감소.
+
+#### 근본 원인 확정
+
+```
+증상: 커넥션 Pending 190개, 평균 응답 4초
+원인: MySQL CPU 포화 (System CPU 100% 도달)
+구조: MySQL + Spring + k6가 단일 머신(i5-6300HQ, 4코어) CPU를 공유
+
+커넥션 풀 적정값 공식: (코어 수 × 2) + 1 = (4 × 2) + 1 = 9
+→ 기본값 10이 이미 이 머신의 최적값에 근접
+→ 풀 확장으로는 해결 불가, DB 요청 자체를 줄여야 함
 ```
 
 ---
 
 ### 남은 개선 여지
 
-| 항목 | 예상 효과 | 비고 |
+| 항목 | 예상 효과 | 근거 |
 |---|---|---|
-| 비로그인 1페이지 Redis 캐싱 | RPS 수배 증가 | 트래픽 80% 이상이 비로그인 1페이지 |
-| COUNT Redis 캐싱 (TTL 5분) | 커넥션 소비 절반 | 총 개수는 실시간 불필요 |
+| 비로그인 1페이지 Redis 캐싱 | RPS 수배 증가 | DB 요청 자체를 제거, CPU 경합 해소 |
+| COUNT 쿼리 Redis 캐싱 (TTL 5분) | 커넥션 소비 50% 감소 | 매 요청 2쿼리 → 1쿼리, 총 개수는 실시간 불필요 |
 
 ---
 

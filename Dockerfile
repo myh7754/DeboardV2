@@ -9,11 +9,12 @@ WORKDIR /app
 # 의존성 캐시 최적화
 # build.gradle이 바뀌지 않으면 이 레이어는 캐시됨 → 빌드 속도 향상
 COPY build.gradle settings.gradle ./
-RUN gradle dependencies --no-daemon || true
+RUN gradle dependencies || true
 
 # 소스 복사 후 JAR 빌드
 COPY src ./src
-RUN gradle bootJar --no-daemon -x test
+RUN --mount=type=cache,target=/root/.gradle \
+    gradle bootJar -x test
 
 # ================================
 # Stage 2: Run
