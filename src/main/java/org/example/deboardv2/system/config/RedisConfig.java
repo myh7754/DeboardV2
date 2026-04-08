@@ -1,5 +1,8 @@
 package org.example.deboardv2.system.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +39,14 @@ public class RedisConfig {
         // Key: String
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         // Value: JSON 직렬화
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        ObjectMapper om = new ObjectMapper();
+        om.registerModule(new JavaTimeModule());
+        om.activateDefaultTyping(
+                om.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer(om));
 
         return redisTemplate;
     }

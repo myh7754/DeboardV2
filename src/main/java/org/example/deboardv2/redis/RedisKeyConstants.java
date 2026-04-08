@@ -14,6 +14,10 @@ public class RedisKeyConstants {
     // 토큰 블랙리스트
     public static final String REFRESH_TOKEN = "refresh:";
 
+    // 비로그인 게시글 목록 캐싱
+    public static final String POST_PUBLIC_PAGE = "post:public:page:";
+    public static final String POST_PUBLIC_COUNT = "post:public:count";
+
     private RedisKeyConstants() {
         // Utility class - instantiation not allowed
     }
