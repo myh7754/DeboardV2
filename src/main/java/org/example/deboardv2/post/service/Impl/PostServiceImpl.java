@@ -11,9 +11,9 @@ import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostCustomRepository;
 import org.example.deboardv2.post.repository.PostJdbcRepository;
 import org.example.deboardv2.post.repository.PostRepository;
+import org.example.deboardv2.post.service.PostCacheService;
 import org.example.deboardv2.post.service.PostService;
 import org.example.deboardv2.redis.RedisKeyConstants;
-import org.example.deboardv2.redis.service.RedisService;
 import org.example.deboardv2.system.exception.CustomException;
 import org.example.deboardv2.system.exception.ErrorCode;
 import org.example.deboardv2.user.entity.User;
@@ -29,7 +29,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -41,14 +40,14 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostCustomRepository postCustomRepository;
     private final PostJdbcRepository postJdbcRepository;
-    private final RedisService redisService;
+    private final PostCacheService postCacheService;
 
     @Override
     @Transactional
     public PostDetailResponse save(PostCreateRequest post) {
         User user = userService.getCurrentUser();
         Post save = postRepository.save(Post.from(post, user));
-        redisService.deleteValue(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
+        postCacheService.evict(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
         return PostDetailResponse.from(save);
     }
 
@@ -96,16 +95,17 @@ public class PostServiceImpl implements PostService {
     private Page<PostDetailResponse> readAllCached(Pageable pageable) {
         String cacheKey = RedisKeyConstants.POST_PUBLIC_PAGE + "0";
 
-        Object cached = redisService.getValue(cacheKey);
-        if (cached instanceof PostPageCacheDto dto) {
-            return new PageImpl<>(dto.getContent(), pageable, dto.getTotalCount());
+        PostPageCacheDto cached = postCacheService.get(cacheKey);
+
+        if (cached != null) {
+            if (postCacheService.isStale(cacheKey)) {
+                postCacheService.refreshAsync(cacheKey, pageable);
+            }
+            return new PageImpl<>(cached.getContent(), pageable, cached.getTotalCount());
         }
 
-        Page<PostDetailResponse> result = postCustomRepository.findAll(pageable);
-        redisService.setValueWithExpire(cacheKey,
-                new PostPageCacheDto(result.getContent(), result.getTotalElements()),
-                Duration.ofSeconds(60));
-        return result;
+        PostPageCacheDto refreshed = postCacheService.refreshSync(cacheKey, pageable);
+        return new PageImpl<>(refreshed.getContent(), pageable, refreshed.getTotalCount());
     }
 
     @Override

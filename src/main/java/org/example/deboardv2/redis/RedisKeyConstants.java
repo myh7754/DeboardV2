@@ -18,6 +18,9 @@ public class RedisKeyConstants {
     public static final String POST_PUBLIC_PAGE = "post:public:page:";
     public static final String POST_PUBLIC_COUNT = "post:public:count";
 
+    // SWR(Stale-While-Revalidate) 신호 키 접미사
+    public static final String STALE_SUFFIX = ":stale";
+
     private RedisKeyConstants() {
         // Utility class - instantiation not allowed
     }
