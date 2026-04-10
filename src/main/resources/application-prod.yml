@@ -100,7 +100,7 @@ mybatis:
 
 app:
   cookie:
-    secure: true
+    secure: false
 
 rss:
   schedule:
