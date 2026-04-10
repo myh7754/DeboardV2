@@ -48,6 +48,7 @@ public class PostServiceImpl implements PostService {
     public PostDetailResponse save(PostCreateRequest post) {
         User user = userService.getCurrentUser();
         Post save = postRepository.save(Post.from(post, user));
+        redisService.deleteValue(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
         return PostDetailResponse.from(save);
     }
 
@@ -103,7 +104,7 @@ public class PostServiceImpl implements PostService {
         Page<PostDetailResponse> result = postCustomRepository.findAll(pageable);
         redisService.setValueWithExpire(cacheKey,
                 new PostPageCacheDto(result.getContent(), result.getTotalElements()),
-                Duration.ofMinutes(5));
+                Duration.ofSeconds(60));
         return result;
     }
 
