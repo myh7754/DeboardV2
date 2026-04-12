@@ -1,0 +1,17 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Spring, Hibernate 내부 로그 차단 -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- 본인 코드 log.info()는 출력 -->
+    <logger name="org.example.deboardv2" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+</configuration>
