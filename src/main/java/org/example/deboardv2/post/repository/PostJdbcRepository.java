@@ -22,8 +22,8 @@ public class PostJdbcRepository {
     @Transactional
     public void saveBatch(List<Post> posts) {
         String sql = "INSERT INTO post (title, content, image, link, external_author_id," +
-                "created_at, feed_id,like_count) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "created_at, feed_id, like_count, is_public) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
@@ -38,6 +38,7 @@ public class PostJdbcRepository {
                 ps.setObject(6, post.getCreatedAt());
                 ps.setObject(7, post.getFeed().getId());
                 ps.setInt(8, post.getLikeCount());
+                ps.setBoolean(9, post.isPublic());
             }
 
             @Override
