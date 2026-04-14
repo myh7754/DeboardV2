@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<?> handleCustomException(CustomException e, HttpServletRequest request) throws ClassNotFoundException {
+    public ResponseEntity<?> handleCustomException(CustomException e, HttpServletRequest request) {
         ErrorCode errorCode = e.getErrorCode();
         logException("warn", e, request);
         return ResponseEntity
@@ -41,63 +41,45 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> globalException(Exception e, HttpServletRequest request) throws ClassNotFoundException {
+    public ResponseEntity<?> globalException(Exception e, HttpServletRequest request) {
         logException("error", e, request);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("서버 내부 오류가 발생하였습니다.", 500));
     }
 
-    private void logException(String level, Exception e, HttpServletRequest request) throws ClassNotFoundException {
+    private void logException(String level, Exception e, HttpServletRequest request) {
         String traceId = MDC.get(TraceIdFilter.TRACE_ID);
-        StackTraceElement[] stackTrace = e.getStackTrace();
 
-        StackTraceElement element = stackTrace[0];
-
-
-        String className = Class.forName(element.getClassName()).getSimpleName();
-        String methodName = element.getMethodName();
-        int lineNumber = element.getLineNumber();
-
-        // 중복이면 로그 생략, 개수만 카운트
         boolean isDuplicate = errorCache.isDuplicate(e, traceId);
         ErrorCache.ErrorInfo info = errorCache.getErrorInfo(e);
         int count = info.getCount().get();
 
-        String messagePattern;
-        Object[] args;
+        try {
+            MDC.put("httpMethod", request.getMethod());
+            MDC.put("httpUri", request.getRequestURI());
+            MDC.put("exceptionType", e.getClass().getSimpleName());
+            if (e instanceof CustomException ce) {
+                MDC.put("errorCode", ce.getErrorCode().name());
+            }
 
-        if (!isDuplicate) {
-            // 처음 발생 → 스택트레이스 포함
-            messagePattern = "[{}] {} {} - {}: {}";
-            args = new Object[]{
-                    traceId,
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    e.getClass().getSimpleName(),
-                    e.getMessage(),
-                    e
-            };
-        } else {
-            // 중복 → 스택트레이스 생략, 누적 횟수만 표시
-            messagePattern = "[{}] {} {} - {}: {} (중복 {}회 발생)";
-            MDC.put("firstTraceId", info.getFirstTraceId());
-            args = new Object[]{
-                    traceId,
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    e.getClass().getSimpleName(),
-                    e.getMessage(),
-                    count,
-            };
+            if (!isDuplicate) {
+                if ("warn".equals(level)) log.warn("request.exception", e);
+                else                      log.error("request.exception", e);
+            } else {
+                MDC.put("firstTraceId", info.getFirstTraceId());
+                MDC.put("duplicateCount", String.valueOf(count));
+                if ("warn".equals(level)) log.warn("request.exception.duplicate");
+                else                      log.error("request.exception.duplicate");
+            }
+        } finally {
+            MDC.remove("httpMethod");
+            MDC.remove("httpUri");
+            MDC.remove("exceptionType");
+            MDC.remove("errorCode");
+            MDC.remove("firstTraceId");
+            MDC.remove("duplicateCount");
         }
-
-        if ("warn".equals(level)) {
-            log.warn(messagePattern, args);
-        } else {
-            log.error(messagePattern, args);
-        }
-
     }
 
 }

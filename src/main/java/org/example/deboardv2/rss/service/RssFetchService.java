@@ -82,7 +82,7 @@ public class RssFetchService {
                         Map<String, Element> rawElementMap = extractRawElements(document);
                         return new RssFeedData(feed, rawElementMap);
                     } catch (Exception e) {
-                        log.error("RSS 파싱 실패 [{}]: {}", feedUrl, e.getMessage());
+                        log.error("rss.parse.failed feedUrl={}", feedUrl, e);
                         throw new RuntimeException(e);
                     }
                 });
