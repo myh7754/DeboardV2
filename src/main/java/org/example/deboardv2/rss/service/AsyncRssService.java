@@ -57,10 +57,10 @@ public class AsyncRssService {
 //            log.info("피드 저장 및 캐시 갱신 완료: {}, 저장된 개수: {}", feed.getFeedUrl(), rssPosts.size());
 
         } catch (java.io.FileNotFoundException e) {
-            log.error("피드 주소를 찾을 수 없습니다 (404): {}", feed.getFeedUrl());
+            log.error("rss.feed.not_found feedUrl={}", feed.getFeedUrl());
             return CompletableFuture.completedFuture(feed.getId());
         } catch (Exception e) {
-            log.error("RSS 수집 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+            log.error("rss.collect.failed feedUrl={}", feed.getFeedUrl(), e);
             return CompletableFuture.completedFuture(feed.getId());
         }
         return CompletableFuture.completedFuture(null);
@@ -77,7 +77,7 @@ public class AsyncRssService {
                 })
                 .exceptionally(e -> {
                     // 네트워크 단계 또는 파싱/저장 단계 중 어디서든 터지면 호출됨
-                    log.error("RSS 수집 최종 실패 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                    log.error("rss.collect.final_failed feedUrl={}", feed.getFeedUrl(), e);
                     return feed.getId(); // 실패 시 피드 ID 반환 (비활성화 대상)
                 });
     }
@@ -109,7 +109,7 @@ public class AsyncRssService {
                 return null; // 모든 작업 성공 시 null 반환
 
             } catch (Exception e) {
-                log.error("DB 저장 작업 중 예외 발생 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                log.error("rss.save.failed feedUrl={}", feed.getFeedUrl(), e);
                 // 여기서 ID를 반환해야 exceptionally 혹은 join()에서 에러 피드로 인식함
                 return feed.getId();
             } finally {

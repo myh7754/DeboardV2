@@ -68,18 +68,11 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse signIn(SignInRequest signInRequest) {
         // 이메일로 사용자 찾기 (Optional 사용)
         User readUser = userRepository.findByEmail(signInRequest.getEmail())
-                .orElseThrow(() -> {
-                    log.info("이메일 오류 발생: 해당 이메일의 회원을 찾을 수 없습니다.");
-                    return new CustomException(ErrorCode.EMAIL_MISMATCH);
-                });
-        
-        // 비밀번호 검증
-        log.info("비밀번호 검증 시도");
+                .orElseThrow(() -> new CustomException(ErrorCode.EMAIL_MISMATCH));
+
         if (!passwordEncoder.matches(signInRequest.getPassword(), readUser.getPassword())) {
-            log.info("비밀번호 틀린 오류 발생");
             throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
-        log.info("검증 통과");
         TokenBody tokenBody = new TokenBody(readUser.getId(),readUser.getNickname() ,readUser.getRole());
         // access token
         String access = jwtTokenProvider.issue(tokenBody, jwtConfig.getValidation().getAccess());

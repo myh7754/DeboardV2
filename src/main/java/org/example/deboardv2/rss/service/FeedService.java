@@ -52,7 +52,7 @@ public class FeedService {
                 try {
                     asyncRssService.collectAndSavePosts(feed);
                 } catch (Exception e) {
-                    log.error("RSS 수집 시작 실패 [{}]: {}", feed.getFeedUrl(), e.getMessage());
+                    log.error("rss.collect.start.failed feedUrl={}", feed.getFeedUrl(), e);
                 }
             }
         });

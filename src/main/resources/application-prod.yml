@@ -119,7 +119,7 @@ custom:
 
 management:
   server:
-    port: 8081
+    port: 8080
   endpoints:
     web:
       base-path: /actuator
