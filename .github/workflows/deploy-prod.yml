@@ -40,5 +40,5 @@ jobs:
         run: |
           cd /home/myh7754/deboard
           docker pull yhfmg/deboard-backend:latest
-          docker compose up -d --no-deps backend
+          docker compose --profile prod up -d --no-deps backend
           docker image prune -f

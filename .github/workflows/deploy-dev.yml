@@ -31,14 +31,14 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: yhfmg/deboard-backend:dev    # prod와 태그 구분
-          cache-from: type=registry,ref=yhfmg/deboard-backend:buildcache-dev
-          cache-to: type=registry,ref=yhfmg/deboard-backend:buildcache-dev,mode=max
+          tags: yhfmg/deboard-backend:latest
+          cache-from: type=registry,ref=yhfmg/deboard-backend:buildcache
+          cache-to: type=registry,ref=yhfmg/deboard-backend:buildcache,mode=max
 
       # 6. EC2에서 바로 배포 (이미 EC2에서 실행 중이므로 SSH 불필요)
       - name: Deploy
         run: |
           cd /home/myh7754/deboard
-          docker pull yhfmg/deboard-backend:dev
-          docker compose up -d --no-deps backend
+          docker pull yhfmg/deboard-backend:latest
+          docker compose --profile prod up -d --no-deps backend
           docker image prune -f
