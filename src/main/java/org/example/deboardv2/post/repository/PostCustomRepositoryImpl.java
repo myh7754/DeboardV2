@@ -107,16 +107,27 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     private List<PostDetailResponse> getPostList(Pageable pageable, BooleanExpression finalCondition) {
+        List<Long> ids = queryFactory
+                .select(qPost.id)
+                .from(qPost)
+                .leftJoin(qPost.author, qUser)
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                .where(finalCondition)
+                .orderBy(qPost.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        if (ids.isEmpty()) return List.of();
+
         return queryFactory
                 .select(postDetailsProjection())
                 .from(qPost)
                 .leftJoin(qPost.author, qUser)
                 .leftJoin(qPost.externalAuthor, qExternalAuthor)
                 .leftJoin(qPost.feed, qFeed)
-                .where(finalCondition)
+                .where(qPost.id.in(ids))
                 .orderBy(qPost.createdAt.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
                 .fetch();
     }
 
