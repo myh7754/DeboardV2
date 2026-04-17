@@ -132,12 +132,13 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     private long getCappedTotalCount(BooleanExpression finalCondition) {
-        Long count = queryFactory
-                .select(qPost.count())
+        return queryFactory
+                .select(qPost.id)
                 .from(qPost)
                 .where(finalCondition)
-                .fetchOne();
-        return count == null ? 0 : Math.min(count, 100_000);
+                .limit(100_000)
+                .fetch()
+                .size();
     }
 
     private QBean<PostDetailResponse> postDetailsProjection() {
@@ -168,13 +169,15 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     private long getCappedTotalLikeCount(BooleanExpression finalCondition) {
-        Long count = queryFactory
-                .select(qLikes.count())
+        return queryFactory
+                .select(qLikes.id)
                 .from(qLikes)
                 .join(qLikes.post, qPost)
+                .leftJoin(qPost.feed, qFeed)
                 .where(finalCondition)
-                .fetchOne();
-        return count == null ? 0 : Math.min(count, 100_000);
+                .limit(100_000)
+                .fetch()
+                .size();
     }
 
     @Override
