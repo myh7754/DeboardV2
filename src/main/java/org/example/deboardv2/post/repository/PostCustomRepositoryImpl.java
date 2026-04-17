@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,16 +120,16 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .fetch();
     }
 
-    private long getTotalCount(BooleanExpression finalCondition) {
-        return Optional.ofNullable(
-                queryFactory
-                        .select(qPost.count())
-                        .from(qPost)
-                        .leftJoin(qPost.author, qUser)
-                        .leftJoin(qPost.feed, qFeed)
-                        .where(finalCondition)
-                        .fetchOne()
-        ).orElse(0L);
+    private long getCappedTotalCount(BooleanExpression finalCondition) {
+        return queryFactory
+                .select(qPost.id)
+                .from(qPost)
+                .leftJoin(qPost.author, qUser)
+                .leftJoin(qPost.feed, qFeed)
+                .where(finalCondition)
+                .limit(100_000)
+                .fetch()
+                .size();
     }
 
     private QBean<PostDetailResponse> postDetailsProjection() {
@@ -160,16 +159,16 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .fetch();
     }
 
-    private Long getTotalLikeCount(BooleanExpression finalCondition) {
-        return Optional.ofNullable(
-                queryFactory
-                        .select(qLikes.count())
-                        .from(qLikes)
-                        .join(qLikes.post, qPost)
-                        .leftJoin(qPost.feed, qFeed)
-                        .where(finalCondition)
-                        .fetchOne()
-        ).orElse(0L);
+    private long getCappedTotalLikeCount(BooleanExpression finalCondition) {
+        return queryFactory
+                .select(qLikes.id)
+                .from(qLikes)
+                .join(qLikes.post, qPost)
+                .leftJoin(qPost.feed, qFeed)
+                .where(finalCondition)
+                .limit(100_000)
+                .fetch()
+                .size();
     }
 
     @Override
@@ -180,7 +179,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         if (userId == null) {
             // 비로그인: WHERE is_public = true + LIMIT → 복합 인덱스 탐
             List<PostDetailResponse> content = getPostList(pageable, qPost.isPublic.isTrue());
-            long total = getTotalCount(qPost.isPublic.isTrue());
+            long total = getCappedTotalCount(qPost.isPublic.isTrue());
             return new PageImpl<>(content, pageable, total);
         }
 
@@ -192,8 +191,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
                 : getPostList(fetch, subscribedPrivateCondition(feedIds));
 
-        long total = getTotalCount(qPost.isPublic.isTrue())
-                + (feedIds.isEmpty() ? 0 : getTotalCount(subscribedPrivateCondition(feedIds)));
+        long total = getCappedTotalCount(qPost.isPublic.isTrue())
+                + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds)));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
     }
@@ -218,7 +217,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
         if (userId == null) {
             BooleanExpression condition = qPost.isPublic.isTrue().and(search);
-            return new PageImpl<>(getPostList(pageable, condition), pageable, getTotalCount(condition));
+            return new PageImpl<>(getPostList(pageable, condition), pageable, getCappedTotalCount(condition));
         }
 
         List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
@@ -228,8 +227,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
                 : getPostList(fetch, subscribedPrivateCondition(feedIds).and(search));
 
-        long total = getTotalCount(qPost.isPublic.isTrue().and(search))
-                + (feedIds.isEmpty() ? 0 : getTotalCount(subscribedPrivateCondition(feedIds).and(search)));
+        long total = getCappedTotalCount(qPost.isPublic.isTrue().and(search))
+                + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds).and(search)));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
     }
@@ -248,8 +247,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
                 : getPostLikeList(fetch, myLike.and(subscribedPrivateCondition(feedIds)));
 
-        long total = getTotalLikeCount(myLike.and(qPost.isPublic.isTrue()))
-                + (feedIds.isEmpty() ? 0 : getTotalLikeCount(myLike.and(subscribedPrivateCondition(feedIds))));
+        long total = getCappedTotalLikeCount(myLike.and(qPost.isPublic.isTrue()))
+                + (feedIds.isEmpty() ? 0 : getCappedTotalLikeCount(myLike.and(subscribedPrivateCondition(feedIds))));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
     }
@@ -269,8 +268,8 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
                 : getPostLikeList(fetch, myLike.and(subscribedPrivateCondition(feedIds)).and(search));
 
-        long total = getTotalLikeCount(myLike.and(qPost.isPublic.isTrue()).and(search))
-                + (feedIds.isEmpty() ? 0 : getTotalLikeCount(myLike.and(subscribedPrivateCondition(feedIds)).and(search)));
+        long total = getCappedTotalLikeCount(myLike.and(qPost.isPublic.isTrue()).and(search))
+                + (feedIds.isEmpty() ? 0 : getCappedTotalLikeCount(myLike.and(subscribedPrivateCondition(feedIds)).and(search)));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
     }
