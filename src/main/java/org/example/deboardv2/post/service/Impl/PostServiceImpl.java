@@ -48,6 +48,7 @@ public class PostServiceImpl implements PostService {
         User user = userService.getCurrentUser();
         Post save = postRepository.save(Post.from(post, user));
         postCacheService.evict(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
+        postCacheService.evictPublicCount();
         return PostDetailResponse.from(save);
     }
 
@@ -80,16 +81,25 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public Page<PostDetailResponse> readAll(int size, int page) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAnonymous = (auth == null || "anonymousUser".equals(auth.getPrincipal()));
 
-        if (isAnonymous && page == 0 && size == 10) {
-            return readAllCached(pageable);
+        if (isAnonymous) {
+            if (page == 0 && size == 10) {
+                return readAllCached(pageable);
+            }
+            return readAllAnonymous(pageable);
         }
 
         return postCustomRepository.findAll(pageable);
+    }
+
+    private Page<PostDetailResponse> readAllAnonymous(Pageable pageable) {
+        List<PostDetailResponse> content = postCustomRepository.getPublicList(pageable);
+        long total = postCacheService.getCachedPublicCount();
+        return new PageImpl<>(content, pageable, total);
     }
 
     private Page<PostDetailResponse> readAllCached(Pageable pageable) {
@@ -122,6 +132,8 @@ public class PostServiceImpl implements PostService {
     public void delete(Long postId) {
         authService.authCheck(postId, "POST");
         postRepository.deleteById(postId);
+        postCacheService.evict(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
+        postCacheService.evictPublicCount();
     }
 
     @Override

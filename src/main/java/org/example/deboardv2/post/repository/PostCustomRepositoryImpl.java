@@ -132,13 +132,12 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     private long getCappedTotalCount(BooleanExpression finalCondition) {
-        return queryFactory
-                .select(qPost.id)
+        Long count = queryFactory
+                .select(qPost.count())
                 .from(qPost)
                 .where(finalCondition)
-                .limit(100_000)
-                .fetch()
-                .size();
+                .fetchOne();
+        return Math.min(count != null ? count : 0L, 100_000L);
     }
 
     private QBean<PostDetailResponse> postDetailsProjection() {
@@ -281,5 +280,22 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 + (feedIds.isEmpty() ? 0 : getCappedTotalLikeCount(myLike.and(subscribedPrivateCondition(feedIds)).and(search)));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countPublic() {
+        Long count = queryFactory
+                .select(qPost.count())
+                .from(qPost)
+                .where(qPost.isPublic.isTrue())
+                .fetchOne();
+        return Math.min(count != null ? count : 0L, 100_000L);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostDetailResponse> getPublicList(Pageable pageable) {
+        return getPostList(pageable, qPost.isPublic.isTrue());
     }
 }

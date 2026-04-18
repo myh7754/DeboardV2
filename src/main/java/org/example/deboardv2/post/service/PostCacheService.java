@@ -62,6 +62,25 @@ public class PostCacheService {
         redisService.deleteValue(cacheKey + RedisKeyConstants.STALE_SUFFIX);
     }
 
+    @Transactional(readOnly = true)
+    public long getCachedPublicCount() {
+        Object cached = redisService.getValue(RedisKeyConstants.POST_PUBLIC_COUNT);
+        if (cached instanceof Number n) {
+            return n.longValue();
+        }
+        return refreshPublicCount();
+    }
+
+    private long refreshPublicCount() {
+        long count = postCustomRepository.countPublic();
+        redisService.setValueWithExpire(RedisKeyConstants.POST_PUBLIC_COUNT, count, DATA_TTL);
+        return count;
+    }
+
+    public void evictPublicCount() {
+        redisService.deleteValue(RedisKeyConstants.POST_PUBLIC_COUNT);
+    }
+
     private PostPageCacheDto fetchAndStore(String cacheKey, Pageable pageable) {
         Page<PostDetailResponse> result = postCustomRepository.findAll(pageable);
         PostPageCacheDto dto = new PostPageCacheDto(result.getContent(), result.getTotalElements());
