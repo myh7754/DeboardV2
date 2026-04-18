@@ -34,6 +34,10 @@ public interface RedisService {
     // unit : 시간 단위 TimeUnit.SECONDS, TimeUnit.MINUTES 등
     void setValueWithExpire(String key, Object value, Duration expireTime);
 
+    // 키가 없을 때만 저장 (SETNX + EXPIRE 원자적 처리)
+    // 저장 성공 시 true, 이미 존재하면 false
+    boolean setIfAbsent(String key, Object value, Duration expireTime);
+
     // Set에 값 추가 및 만료시간 설정 (중복 체크용)
     void addToSet(String key, String value, int i);
 

@@ -32,8 +32,10 @@ public class PostCacheService {
     private final PostCustomRepository postCustomRepository;
     private final RedisService redisService;
 
-    private static final Duration DATA_TTL  = Duration.ofSeconds(70);
-    private static final Duration STALE_TTL = Duration.ofSeconds(50);
+    private static final Duration DATA_TTL        = Duration.ofSeconds(70);
+    private static final Duration STALE_TTL       = Duration.ofSeconds(50);
+    private static final Duration COUNT_DATA_TTL  = Duration.ofSeconds(70);
+    private static final Duration COUNT_STALE_TTL = Duration.ofSeconds(40);
 
     public PostPageCacheDto get(String cacheKey) {
         Object cached = redisService.getValue(cacheKey);
@@ -62,23 +64,39 @@ public class PostCacheService {
         redisService.deleteValue(cacheKey + RedisKeyConstants.STALE_SUFFIX);
     }
 
-    @Transactional(readOnly = true)
     public long getCachedPublicCount() {
         Object cached = redisService.getValue(RedisKeyConstants.POST_PUBLIC_COUNT);
         if (cached instanceof Number n) {
+            if (!redisService.hasKey(RedisKeyConstants.POST_PUBLIC_COUNT + RedisKeyConstants.STALE_SUFFIX)) {
+                refreshCountAsync();
+            }
             return n.longValue();
         }
-        return refreshPublicCount();
+        return refreshCountSync();
     }
 
-    private long refreshPublicCount() {
+    @Async("cacheTaskExecutor")
+    @Transactional(readOnly = true)
+    public void refreshCountAsync() {
+        boolean acquired = redisService.setIfAbsent(
+            RedisKeyConstants.POST_PUBLIC_COUNT + RedisKeyConstants.STALE_SUFFIX, "1", COUNT_STALE_TTL
+        );
+        if (!acquired) return;
+        refreshCountSync();
+    }
+
+    private long refreshCountSync() {
         long count = postCustomRepository.countPublic();
-        redisService.setValueWithExpire(RedisKeyConstants.POST_PUBLIC_COUNT, count, DATA_TTL);
+        redisService.setValueWithExpire(RedisKeyConstants.POST_PUBLIC_COUNT, count, COUNT_DATA_TTL);
+        redisService.setValueWithExpire(
+            RedisKeyConstants.POST_PUBLIC_COUNT + RedisKeyConstants.STALE_SUFFIX, "1", COUNT_STALE_TTL
+        );
         return count;
     }
 
     public void evictPublicCount() {
         redisService.deleteValue(RedisKeyConstants.POST_PUBLIC_COUNT);
+        redisService.deleteValue(RedisKeyConstants.POST_PUBLIC_COUNT + RedisKeyConstants.STALE_SUFFIX);
     }
 
     private PostPageCacheDto fetchAndStore(String cacheKey, Pageable pageable) {

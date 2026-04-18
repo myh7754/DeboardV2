@@ -78,6 +78,11 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    public boolean setIfAbsent(String key, Object value, Duration expireTime) {
+        return Boolean.TRUE.equals(valueOps().setIfAbsent(key, value, expireTime));
+    }
+
+    @Override
     public void addToSet(String key, String value, int maxSize) {
         redisTemplate.opsForZSet().add(key, value, System.currentTimeMillis());
         Long count = redisTemplate.opsForZSet().zCard(key);
