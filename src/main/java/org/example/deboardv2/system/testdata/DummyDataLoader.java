@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 @Component
@@ -244,17 +245,83 @@ public class DummyDataLoader implements CommandLineRunner {
 
         log.info("더미 데이터 post {}건 삽입 시작...", total);
 
+        String[] titles = {
+            "Spring Boot 3.x 마이그레이션 삽질기 - @Configuration 변경사항 정리",
+            "Java 21 Virtual Thread 도입 후 HikariCP 커넥션 풀 고갈 이슈",
+            "MySQL EXPLAIN 분석으로 쿼리 성능 10배 개선한 방법",
+            "AWS EC2 t3.small에서 OOM 발생 원인과 JVM 튜닝 방법",
+            "Docker Compose로 로컬 개발 환경 구성하기 - MySQL, Redis, Kafka",
+            "Redis 캐시 stampede 문제와 SWR 패턴으로 해결한 경험",
+            "JPA N+1 문제 완전 정복 - fetch join vs EntityGraph 비교",
+            "Kafka Consumer Group 운영하면서 겪은 장애와 대응 방법",
+            "React Query로 서버 상태 관리 리팩토링 후기",
+            "TypeScript 제네릭 고급 활용법 - infer, conditional types",
+            "쿠버네티스 Pod CrashLoopBackOff 원인 분석 가이드",
+            "GitHub Actions로 CI/CD 파이프라인 구축 - self-hosted runner 활용",
+            "PostgreSQL vs MySQL 성능 비교 - 1000만 건 데이터 기준",
+            "Python asyncio로 크롤러 성능 20배 향상시키기",
+            "MSA 전환 6개월 회고 - 잘된 것과 잘못된 것",
+            "Nginx 리버스 프록시 설정과 SSL 인증서 자동 갱신",
+            "IntelliJ IDEA 생산성 높이는 단축키 50선",
+            "클린 아키텍처를 실무에 적용하면서 느낀 점",
+            "REST API 설계 원칙과 실무에서 타협하는 부분들",
+            "Git Flow vs Trunk Based Development - 팀 규모별 선택 기준",
+            "JVM GC 튜닝 - G1GC에서 ZGC로 전환한 이유",
+            "Elasticsearch 도입기 - MySQL FULLTEXT 한계를 넘어서",
+            "Spring Security JWT 인증 구현 시 주의사항",
+            "대용량 파일 업로드 S3 Presigned URL로 구현하기",
+            "WebSocket vs SSE - 실시간 알림 기능 선택 기준",
+            "테스트 코드 작성 습관 들이기 - JUnit5, Mockito 실전",
+            "Lombok 사용 시 주의해야 할 5가지",
+            "SOLID 원칙을 코드로 설명하는 예제 모음",
+            "Rate Limiting 구현 방법 비교 - Token Bucket vs Sliding Window",
+            "모놀리식에서 MSA로 점진적 전환하는 Strangler Fig 패턴",
+            "QueryDSL로 동적 쿼리 작성하기 - BooleanExpression 조합",
+            "HikariCP 커넥션 풀 사이즈 계산하는 공식",
+            "Spring Batch로 대용량 데이터 처리 - Chunk 기반 처리",
+            "Redis Sorted Set으로 실시간 랭킹 구현하기",
+            "Prometheus + Grafana 모니터링 구축 - Spring Boot Actuator 연동",
+            "OAuth2 소셜 로그인 구현 - Google, Kakao, Naver",
+            "비동기 처리 ThreadPoolTaskExecutor 설정 가이드",
+            "MySQL 인덱스 전략 - 복합 인덱스 컬럼 순서의 중요성",
+            "이벤트 드리븐 아키텍처 도입 후 달라진 것들",
+            "로컬에서 잘 되는데 운영에서만 발생하는 이슈 디버깅 방법",
+            "객체지향 설계 - 상속보다 조합을 써야 하는 이유",
+            "AWS Lambda 콜드 스타트 줄이는 방법 - Provisioned Concurrency",
+            "Flyway로 DB 마이그레이션 관리하기",
+            "Spring WebFlux 도입 전에 고려해야 할 것들",
+            "코드 리뷰 문화 정착시키기 - 팀에서 겪은 시행착오",
+            "HTTP/2, HTTP/3 차이와 실무 적용 시 고려사항",
+            "분산 트랜잭션 SAGA 패턴 구현 경험담",
+            "Java Stream API 성능 주의사항 - parallel stream 함정",
+            "SQS + Lambda로 이벤트 기반 알림 시스템 구축",
+            "인덱스를 타는데도 쿼리가 느린 이유 - OFFSET의 함정"
+        };
+        String[] contentTemplates = {
+            "이번 포스팅에서는 %s에 대해 자세히 다뤄보겠습니다. 실무에서 직접 겪은 사례를 바탕으로 작성했으며, 코드 예제와 함께 단계별로 설명합니다. 같은 문제로 고민하시는 분들께 도움이 되길 바랍니다.",
+            "최근 프로젝트에서 %s 관련 이슈를 해결하면서 얻은 인사이트를 공유합니다. 처음에는 간단해 보였지만 생각보다 깊은 내용이 있었습니다. 삽질한 시간을 줄여드리고 싶어 정리했습니다.",
+            "%s를 도입하면서 팀에서 겪은 시행착오와 최종 결론을 정리했습니다. 공식 문서만으로는 부족했던 부분, 실제 운영 환경에서 다른 부분들을 중점적으로 다룹니다.",
+            "오늘은 %s의 내부 동작 원리를 파헤쳐 보겠습니다. 원리를 이해하면 문제가 생겼을 때 훨씬 빠르게 대응할 수 있습니다. 소스 코드 레벨까지 분석한 내용도 포함합니다.",
+            "%s에 대해 많은 오해가 있어서 이번 기회에 제대로 정리해보려 합니다. 인터넷에 잘못된 정보도 많고, 공식 문서와 다르게 동작하는 케이스도 있어서 직접 테스트해봤습니다.",
+            "실무에서 %s를 적용할 때 반드시 알아야 할 포인트들을 정리했습니다. 이론과 실제 차이, 성능 측정 결과, 운영 노하우까지 담았습니다.",
+            "%s 관련해서 팀원들과 자주 나누는 질문들을 모아서 정리했습니다. 신입 개발자분들이 특히 자주 막히는 부분들 위주로 설명합니다."
+        };
+
+        Random random = new Random();
         List<Object[]> postBatch = new ArrayList<>();
         LocalDateTime now = LocalDateTime.of(2010, 1, 1, 0, 0, 0);
         for (int i = 1; i <= total; i++) {
+            String title = titles[random.nextInt(titles.length)];
+            String content = String.format(contentTemplates[random.nextInt(contentTemplates.length)], title);
+
             postBatch.add(new Object[]{
                     0,                                  // like_count (NOT NULL)
                     now,                                // created_at (NOT NULL)
                     now,                               // updated_at (NULL 허용)
                     1L,                                 // user_id
-                    "content" + i,                      // content
+                    content,                            // content
                     null,                               // image (NULL 허용)
-                    "title" + i,                        // title
+                    title,                              // title
                     true                                // is_public (사용자 작성 글은 항상 공개)
             });
 
