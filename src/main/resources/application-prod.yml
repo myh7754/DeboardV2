@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql:3306/deboard?rewriteBatchedStatements=true
+    url: jdbc:mysql://database-test.cjouqsq0ufj5.ap-northeast-2.rds.amazonaws.com:3306/deboard?rewriteBatchedStatements=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:

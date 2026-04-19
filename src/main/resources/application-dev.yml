@@ -1,11 +1,11 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql:3306/deboard?rewriteBatchedStatements=true
+    url: jdbc:mysql://deboard-test.cjouqsq0ufj5.ap-northeast-2.rds.amazonaws.com:3306/deboard?rewriteBatchedStatements=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 40
+      maximum-pool-size: 10
       connection-timeout: 30000
   jpa:
     hibernate:
@@ -62,7 +62,6 @@ spring:
             scope:
               - profile_nickname
               - profile_image
-          #          naver 소셜 로그인 요청 경로 GET : /oauth2/authorization/naver
           naver:
             client-name: Naver
             client-id: ${NAVER_CLIENT_ID}
@@ -101,7 +100,11 @@ mybatis:
 
 app:
   cookie:
-    secure: true
+    secure: false
+
+rss:
+  schedule:
+    cron: "0 0 * * * *"
 
 custom:
   jwt:
@@ -115,8 +118,11 @@ custom:
     redirect-url: http://deboard.p-e.kr
 
 management:
+  server:
+    port: 8080
   endpoints:
     web:
+      base-path: /actuator
       exposure:
         include: "health,info,metrics,prometheus"
   metrics:
