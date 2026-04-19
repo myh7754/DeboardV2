@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class PostCustomRepositoryImpl implements PostCustomRepository {
     private final JPAQueryFactory queryFactory;
+    private final JdbcTemplate jdbcTemplate;
     QPost qPost = QPost.post;
     QUser qUser = QUser.user;
     QExternalAuthor qExternalAuthor = QExternalAuthor.externalAuthor;
@@ -110,8 +112,6 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<Long> ids = queryFactory
                 .select(qPost.id)
                 .from(qPost)
-                .leftJoin(qPost.author, qUser)
-                .leftJoin(qPost.externalAuthor, qExternalAuthor)
                 .where(finalCondition)
                 .orderBy(qPost.createdAt.desc())
                 .offset(pageable.getOffset())
@@ -285,12 +285,12 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     @Override
     @Transactional(readOnly = true)
     public long countPublic() {
-        Long count = queryFactory
-                .select(qPost.count())
-                .from(qPost)
-                .where(qPost.isPublic.isTrue())
-                .fetchOne();
-        return Math.min(count != null ? count : 0L, 100_000L);
+        // LIMIT 서브쿼리로 100K 도달 즉시 중단 — 1000만 건 풀스캔(4.6s) 방지
+        Long count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM (SELECT 1 FROM post WHERE is_public = 1 LIMIT 100000) t",
+            Long.class
+        );
+        return count != null ? count : 0L;
     }
 
     @Override
