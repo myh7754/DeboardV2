@@ -199,7 +199,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
                 : getPostList(fetch, subscribedPrivateCondition(feedIds));
 
-        long total = getCappedTotalCount(qPost.isPublic.isTrue())
+        long total = countPublic()
                 + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds)));
 
         return mergeAndPage(publicPosts, privatePosts, total, pageable);
