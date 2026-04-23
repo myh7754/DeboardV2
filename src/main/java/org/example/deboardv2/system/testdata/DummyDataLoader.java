@@ -240,7 +240,7 @@ public class DummyDataLoader implements CommandLineRunner {
 
 
         // Post 데이터도 동일한 방식으로 batch insert
-        int total = 10_000_000;
+        int total = 1_000_000;
         int batchSize = 50000;
 
         log.info("더미 데이터 post {}건 삽입 시작...", total);
