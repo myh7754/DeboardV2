@@ -17,7 +17,10 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(indexes = @Index(name = "idx_post_is_public_created_at", columnList = "is_public, created_at DESC"))
+@Table(indexes = {
+        @Index(name = "idx_post_is_public_created_at", columnList = "is_public, created_at DESC"),
+        @Index(name = "idx_post_feed_created_at", columnList = "feed_id, created_at DESC")
+})
 public class Post extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

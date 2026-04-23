@@ -1,5 +1,6 @@
 package org.example.deboardv2.post.repository;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.QBean;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -24,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -94,7 +96,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         return PageRequest.of(0, fetchSize);
     }
 
-    // 두 리스트 합산 후 createdAt 내림차순 정렬 + 페이징
+    // [likes 경로용] PostDetailResponse 리스트 병합 + 페이징
     private Page<PostDetailResponse> mergeAndPage(
             List<PostDetailResponse> list1,
             List<PostDetailResponse> list2,
@@ -106,6 +108,59 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), merged.size());
         return new PageImpl<>(merged.subList(start, end), pageable, total);
+    }
+
+    // [post 경로용] Tuple(id, createdAt)만 병합 정렬 → ID 추출 → 상세 조회
+    private Page<PostDetailResponse> mergeAndPageTuples(
+            List<Tuple> list1,
+            List<Tuple> list2,
+            long total,
+            Pageable pageable) {
+        List<Long> pageIds = Stream.concat(list1.stream(), list2.stream())
+                .sorted(Comparator.comparing(
+                        (Tuple t) -> t.get(qPost.createdAt),
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .skip(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .<Long>map(t -> t.get(qPost.id))
+                .collect(Collectors.toList());
+        return new PageImpl<>(fetchDetailsByIds(pageIds), pageable, total);
+    }
+
+    // (id, createdAt)만 조회 — 커버링 인덱스, LONGTEXT 전송 없음
+    private List<Tuple> fetchIdAndDate(Pageable pageable, BooleanExpression condition) {
+        return queryFactory
+                .select(qPost.id, qPost.createdAt)
+                .from(qPost)
+                .where(condition)
+                .orderBy(qPost.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    // 최종 pageSize(10개)만 상세 조회
+    private List<PostDetailResponse> fetchDetailsByIds(List<Long> ids) {
+        if (ids.isEmpty()) return List.of();
+        return queryFactory
+                .select(postDetailsProjection())
+                .from(qPost)
+                .leftJoin(qPost.author, qUser)
+                .leftJoin(qPost.externalAuthor, qExternalAuthor)
+                .leftJoin(qPost.feed, qFeed)
+                .where(qPost.id.in(ids))
+                .orderBy(qPost.createdAt.desc())
+                .fetch();
+    }
+
+    // 비공개 구독글 count — LIMIT 서브쿼리로 100K 도달 즉시 중단
+    private long countCappedPrivate(List<Long> feedIds) {
+        if (feedIds.isEmpty()) return 0L;
+        String placeholders = String.join(",", Collections.nCopies(feedIds.size(), "?"));
+        String sql = "SELECT COUNT(*) FROM (SELECT 1 FROM post WHERE is_public = 0 " +
+                "AND feed_id IN (" + placeholders + ") LIMIT 100000) t";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, feedIds.toArray());
+        return count != null ? count : 0L;
     }
 
     private List<PostDetailResponse> getPostList(Pageable pageable, BooleanExpression finalCondition) {
@@ -195,14 +250,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
         Pageable fetch = fetchPageable(pageable);
 
-        List<PostDetailResponse> publicPosts = getPostList(fetch, qPost.isPublic.isTrue());
-        List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
-                : getPostList(fetch, subscribedPrivateCondition(feedIds));
+        List<Tuple> publicPosts = fetchIdAndDate(fetch, qPost.isPublic.isTrue());
+        List<Tuple> privatePosts = feedIds.isEmpty() ? List.of()
+                : fetchIdAndDate(fetch, subscribedPrivateCondition(feedIds));
 
         long total = countPublic()
-                + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds)));
+                + (feedIds.isEmpty() ? 0 : countCappedPrivate(feedIds));
 
-        return mergeAndPage(publicPosts, privatePosts, total, pageable);
+        return mergeAndPageTuples(publicPosts, privatePosts, total, pageable);
     }
 
     @Override
@@ -214,14 +269,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
         Pageable fetch = fetchPageable(pageable);
 
-        List<PostDetailResponse> publicPosts = getPostList(fetch, qPost.isPublic.isTrue());
-        List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
-                : getPostList(fetch, subscribedPrivateCondition(feedIds));
+        List<Tuple> publicPosts = fetchIdAndDate(fetch, qPost.isPublic.isTrue());
+        List<Tuple> privatePosts = feedIds.isEmpty() ? List.of()
+                : fetchIdAndDate(fetch, subscribedPrivateCondition(feedIds));
 
         long total = publicCount
-                + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds)));
+                + (feedIds.isEmpty() ? 0 : countCappedPrivate(feedIds));
 
-        return mergeAndPage(publicPosts, privatePosts, total, pageable);
+        return mergeAndPageTuples(publicPosts, privatePosts, total, pageable);
     }
 
     @Override
@@ -250,14 +305,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
         Pageable fetch = fetchPageable(pageable);
 
-        List<PostDetailResponse> publicPosts = getPostList(fetch, qPost.isPublic.isTrue().and(search));
-        List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
-                : getPostList(fetch, subscribedPrivateCondition(feedIds).and(search));
+        List<Tuple> publicPosts = fetchIdAndDate(fetch, qPost.isPublic.isTrue().and(search));
+        List<Tuple> privatePosts = feedIds.isEmpty() ? List.of()
+                : fetchIdAndDate(fetch, subscribedPrivateCondition(feedIds).and(search));
 
         long total = getCappedTotalCount(qPost.isPublic.isTrue().and(search))
                 + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds).and(search)));
 
-        return mergeAndPage(publicPosts, privatePosts, total, pageable);
+        return mergeAndPageTuples(publicPosts, privatePosts, total, pageable);
     }
 
     @Override

@@ -13,20 +13,22 @@
         <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="DEBUG"/>
     </springProfile>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="CONSOLE_LOCAL" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
-        <springProfile name="local">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>DEBUG</level>
-            </filter>
-        </springProfile>
-        <springProfile name="dev,prod">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>WARN</level>
-            </filter>
-        </springProfile>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="CONSOLE_PROD" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
     </appender>
 
     <!-- JSON 로그 파일 Appender -->
@@ -57,13 +59,13 @@
     <!-- Root Logger -->
     <springProfile name="local">
         <root level="DEBUG">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE_LOCAL"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
     <springProfile name="dev,prod">
         <root level="WARN">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE_PROD"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
