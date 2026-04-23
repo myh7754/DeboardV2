@@ -207,6 +207,25 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount) {
+        Long userId = getCurrentUserId();
+        if (userId == null) return Page.empty(pageable);
+
+        List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
+        Pageable fetch = fetchPageable(pageable);
+
+        List<PostDetailResponse> publicPosts = getPostList(fetch, qPost.isPublic.isTrue());
+        List<PostDetailResponse> privatePosts = feedIds.isEmpty() ? List.of()
+                : getPostList(fetch, subscribedPrivateCondition(feedIds));
+
+        long total = publicCount
+                + (feedIds.isEmpty() ? 0 : getCappedTotalCount(subscribedPrivateCondition(feedIds)));
+
+        return mergeAndPage(publicPosts, privatePosts, total, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PostDetailResponse getPostDetails(Long postId) {
         return queryFactory
                 .select(postDetailsProjection())

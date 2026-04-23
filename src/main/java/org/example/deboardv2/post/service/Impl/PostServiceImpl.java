@@ -93,7 +93,8 @@ public class PostServiceImpl implements PostService {
             return readAllAnonymous(pageable);
         }
 
-        return postCustomRepository.findAll(pageable);
+        long publicCount = postCacheService.getCachedPublicCount();
+        return postCustomRepository.findAllLoggedIn(pageable, publicCount);
     }
 
     private Page<PostDetailResponse> readAllAnonymous(Pageable pageable) {

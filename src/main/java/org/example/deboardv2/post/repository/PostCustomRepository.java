@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface PostCustomRepository {
     Page<PostDetailResponse> findAll(Pageable pageable);
+    Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount);
     PostDetailResponse getPostDetails(Long postId);
     Page<PostDetailResponse> searchPost(Pageable pageable, String searchType,String keyword);
     Page<PostDetailResponse> findLikesPosts(Pageable pageable);
