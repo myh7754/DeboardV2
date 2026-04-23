@@ -76,7 +76,9 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     // 내가 구독한 PRIVATE 피드 ID 목록
-    private List<Long> getSubscribedPrivateFeedIds(Long userId) {
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getSubscribedPrivateFeedIds(Long userId) {
         return queryFactory
                 .select(qFeedSubscription.feed.id)
                 .from(qFeedSubscription)
@@ -154,7 +156,9 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     }
 
     // 비공개 구독글 count — LIMIT 서브쿼리로 100K 도달 즉시 중단
-    private long countCappedPrivate(List<Long> feedIds) {
+    @Override
+    @Transactional(readOnly = true)
+    public long countCappedPrivate(List<Long> feedIds) {
         if (feedIds.isEmpty()) return 0L;
         String placeholders = String.join(",", Collections.nCopies(feedIds.size(), "?"));
         String sql = "SELECT COUNT(*) FROM (SELECT 1 FROM post WHERE is_public = 0 " +
@@ -262,19 +266,14 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount) {
-        Long userId = getCurrentUserId();
-        if (userId == null) return Page.empty(pageable);
-
-        List<Long> feedIds = getSubscribedPrivateFeedIds(userId);
+    public Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount, List<Long> feedIds, long privateCount) {
         Pageable fetch = fetchPageable(pageable);
 
         List<Tuple> publicPosts = fetchIdAndDate(fetch, qPost.isPublic.isTrue());
         List<Tuple> privatePosts = feedIds.isEmpty() ? List.of()
                 : fetchIdAndDate(fetch, subscribedPrivateCondition(feedIds));
 
-        long total = publicCount
-                + (feedIds.isEmpty() ? 0 : countCappedPrivate(feedIds));
+        long total = publicCount + privateCount;
 
         return mergeAndPageTuples(publicPosts, privatePosts, total, pageable);
     }

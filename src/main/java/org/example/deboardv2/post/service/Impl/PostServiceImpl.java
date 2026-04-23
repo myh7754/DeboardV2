@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.example.deboardv2.user.dto.TokenBody;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -93,8 +94,14 @@ public class PostServiceImpl implements PostService {
             return readAllAnonymous(pageable);
         }
 
+        TokenBody tokenBody = (TokenBody) auth.getPrincipal();
+        Long userId = tokenBody.getMemberId();
+
         long publicCount = postCacheService.getCachedPublicCount();
-        return postCustomRepository.findAllLoggedIn(pageable, publicCount);
+        List<Long> feedIds = postCacheService.getCachedPrivateFeedIds(userId);
+        long privateCount = postCacheService.getCachedPrivateCount(userId, feedIds);
+
+        return postCustomRepository.findAllLoggedIn(pageable, publicCount, feedIds, privateCount);
     }
 
     private Page<PostDetailResponse> readAllAnonymous(Pageable pageable) {

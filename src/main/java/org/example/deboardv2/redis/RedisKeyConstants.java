@@ -18,6 +18,10 @@ public class RedisKeyConstants {
     public static final String POST_PUBLIC_PAGE = "post:public:page:";
     public static final String POST_PUBLIC_COUNT = "post:public:count";
 
+    // 로그인 사용자 구독 피드 ID 목록 / 비공개글 수 캐싱
+    public static final String PRIVATE_FEED_IDS = "post:private:feed_ids:";
+    public static final String PRIVATE_POST_COUNT = "post:private:count:";
+
     // SWR(Stale-While-Revalidate) 신호 키 접미사
     public static final String STALE_SUFFIX = ":stale";
 

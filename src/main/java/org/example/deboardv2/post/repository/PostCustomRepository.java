@@ -8,12 +8,14 @@ import java.util.List;
 
 public interface PostCustomRepository {
     Page<PostDetailResponse> findAll(Pageable pageable);
-    Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount);
+    Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount, List<Long> feedIds, long privateCount);
     PostDetailResponse getPostDetails(Long postId);
     Page<PostDetailResponse> searchPost(Pageable pageable, String searchType,String keyword);
     Page<PostDetailResponse> findLikesPosts(Pageable pageable);
     Page<PostDetailResponse> searchLikePosts( Pageable pageable, String searchType, String keyword);
     long countPublic();
     List<PostDetailResponse> getPublicList(Pageable pageable);
+    List<Long> getSubscribedPrivateFeedIds(Long userId);
+    long countCappedPrivate(List<Long> feedIds);
 
 }
