@@ -25,7 +25,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -268,34 +267,15 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     @Override
     @Transactional(readOnly = true)
     public Page<PostDetailResponse> findAllLoggedIn(Pageable pageable, long publicCount, List<Long> feedIds, long privateCount) {
+        Pageable fetch = fetchPageable(pageable);
+
+        List<Tuple> publicPosts = fetchIdAndDate(fetch, qPost.isPublic.isTrue());
+        List<Tuple> privatePosts = feedIds.isEmpty() ? List.of()
+                : fetchIdAndDate(fetch, subscribedPrivateCondition(feedIds));
+
         long total = publicCount + privateCount;
 
-        if (feedIds.isEmpty()) {
-            return new PageImpl<>(getPublicList(pageable), pageable, total);
-        }
-
-        List<Long> ids = fetchIdsByUnionAll(pageable, feedIds);
-        return new PageImpl<>(fetchDetailsByIds(ids), pageable, total);
-    }
-
-    private List<Long> fetchIdsByUnionAll(Pageable pageable, List<Long> feedIds) {
-        int fetchSize = (int) pageable.getOffset() + pageable.getPageSize();
-        String placeholders = String.join(",", Collections.nCopies(feedIds.size(), "?"));
-
-        String sql = "SELECT id FROM (" +
-                "(SELECT id, created_at FROM post WHERE is_public = 1 ORDER BY created_at DESC LIMIT ?)" +
-                " UNION ALL " +
-                "(SELECT id, created_at FROM post WHERE is_public = 0 AND feed_id IN (" + placeholders + ") ORDER BY created_at DESC LIMIT ?)" +
-                ") AS combined ORDER BY created_at DESC LIMIT ? OFFSET ?";
-
-        List<Object> params = new ArrayList<>();
-        params.add(fetchSize);
-        params.addAll(feedIds);
-        params.add(fetchSize);
-        params.add(pageable.getPageSize());
-        params.add(pageable.getOffset());
-
-        return jdbcTemplate.queryForList(sql, Long.class, params.toArray());
+        return mergeAndPageTuples(publicPosts, privatePosts, total, pageable);
     }
 
     @Override
