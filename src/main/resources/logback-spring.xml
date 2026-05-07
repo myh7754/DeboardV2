@@ -7,20 +7,27 @@
     <!-- 로그 경로: 환경변수 LOG_PATH 없으면 로컬 기본값 'logs' -->
     <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
 
-    <!-- Hibernate SQL 출력 -->
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <!-- Hibernate SQL: local 환경에서만 DEBUG -->
+    <springProfile name="local">
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="DEBUG"/>
+    </springProfile>
 
-    <!-- 바인딩 값(Parameter) 출력 -->
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="DEBUG"/>
-
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- 기존 encoder 그대로 사용 -->
+    <appender name="CONSOLE_LOCAL" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
-        <!-- 필터 추가 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="CONSOLE_PROD" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
         </filter>
     </appender>
 
@@ -50,10 +57,16 @@
     </appender>
 
     <!-- Root Logger -->
-    <root level="INFO">
-        <!-- Spring Boot 기본 CONSOLE 색상 로그 -->
-        <appender-ref ref="CONSOLE"/>
-        <!-- JSON 로그 파일 -->
-        <appender-ref ref="FILE"/>
-    </root>
+    <springProfile name="local">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE_LOCAL"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+    <springProfile name="dev,prod">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE_PROD"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
 </configuration>

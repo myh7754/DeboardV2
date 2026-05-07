@@ -25,27 +25,31 @@ public class PostJdbcRepository {
                 "created_at, feed_id, like_count, is_public) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+        int chunkSize = 200;
+        for (int offset = 0; offset < posts.size(); offset += chunkSize) {
+            List<Post> chunk = posts.subList(offset, Math.min(offset + chunkSize, posts.size()));
+            jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
-            @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
-                Post post = posts.get(i);
-                ps.setString(1, post.getTitle());
-                ps.setString(2, post.getContent());
-                ps.setString(3, post.getImage());
-                ps.setString(4, post.getLink());
-                ps.setObject(5, post.getExternalAuthor().getId());
-                ps.setObject(6, post.getCreatedAt());
-                ps.setObject(7, post.getFeed().getId());
-                ps.setInt(8, post.getLikeCount());
-                ps.setBoolean(9, post.isPublic());
-            }
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    Post post = chunk.get(i);
+                    ps.setString(1, post.getTitle());
+                    ps.setString(2, post.getContent());
+                    ps.setString(3, post.getImage());
+                    ps.setString(4, post.getLink());
+                    ps.setObject(5, post.getExternalAuthor().getId());
+                    ps.setObject(6, post.getCreatedAt());
+                    ps.setObject(7, post.getFeed().getId());
+                    ps.setInt(8, post.getLikeCount());
+                    ps.setBoolean(9, post.isPublic());
+                }
 
-            @Override
-            public int getBatchSize() {
-                return posts.size();
-            }
-        });
+                @Override
+                public int getBatchSize() {
+                    return chunk.size();
+                }
+            });
+        }
     }
 
 //    @Transactional
