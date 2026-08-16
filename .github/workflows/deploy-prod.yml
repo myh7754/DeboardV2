@@ -3,6 +3,11 @@ name: Deploy to EC2
 on:
   push:
     branches: [ main ]
+    # 문서만 바뀐 커밋으로는 배포하지 않는다.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
 
 jobs:
   deploy:
