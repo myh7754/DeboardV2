@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
 
 @Component
 @Slf4j
@@ -31,7 +30,6 @@ public class AsyncRssService {
     private final PostService postService;
     private final RedisService redisService;
     private final Executor rssTaskExecutor;
-    private final Semaphore dbLimitSemaphore;
 
     @Async("rssTaskExecutor")
     public CompletableFuture<Long> collectAndSavePosts(Feed feed) throws Exception {

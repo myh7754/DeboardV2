@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
 
 @Configuration
 @EnableAsync
@@ -26,11 +25,6 @@ public class AsyncConfig {
         executor.setTaskDecorator(new ContextCopyTaskDecorator());
         executor.initialize();
         return executor;
-    }
-
-    @Bean
-    public Semaphore dbLimitSemaphore() {
-        return new Semaphore(40);
     }
 
     @Bean(name = "fetchRssExecutor")
