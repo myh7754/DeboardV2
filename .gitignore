@@ -43,7 +43,13 @@ out/
 logs/
 log/
 
-docs/
+# 성능 측정 문서만 공개하고, 작업 메모(계획표·리팩토링·감사)는 제외한다.
+docs/*
+!docs/query-perf-v2.md
+!docs/query-perf-v3.md
+!docs/rss-scheduler.md
+!docs/dummy-data.md
+
 ### Claude Code ###
 .claude/
 .mcp.json
