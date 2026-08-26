@@ -2,6 +2,7 @@ package org.example.deboardv2.post.service;
 
 import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.dto.PostDetailResponse;
+import org.example.deboardv2.post.dto.PostPageResponse;
 import org.example.deboardv2.post.dto.PostUpdateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ public interface PostService {
     public Post getPostReferenceById(Long postId);
     public PostDetailResponse getPostDtoById(Long postId);
     public Page<PostDetailResponse> readAll(int size, int page);
+    public PostPageResponse readAllByCursor(String cursor, int size);
     public Page<PostDetailResponse> readLikesPosts(int size, int page);
     public void delete(Long post);
     public void update(PostUpdateRequest post, Long postId);

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.example.deboardv2.post.dto.PostPageCacheDto;
+import org.example.deboardv2.post.dto.PostPageResponse;
 import org.example.deboardv2.post.dto.PostUpdateRequest;
 import org.example.deboardv2.post.entity.Post;
 import org.example.deboardv2.post.repository.PostCustomRepository;
@@ -102,6 +103,21 @@ public class PostServiceImpl implements PostService {
         long privateCount = postCacheService.getCachedPrivateCount(userId, feedIds);
 
         return postCustomRepository.findAllLoggedIn(pageable, publicCount, feedIds, privateCount);
+    }
+
+    // keyset 경로 — page 번호 없이 커서만으로 다음 목록을 읽음 (total count 쿼리 없음)
+    @Override
+    @Transactional(readOnly = true)
+    public PostPageResponse readAllByCursor(String cursor, int size) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAnonymous = (auth == null || "anonymousUser".equals(auth.getPrincipal()));
+
+        // 비로그인은 구독 피드가 없어 공개글 단일 브랜치로 처리됨 (UNION 자체가 생략)
+        List<Long> feedIds = isAnonymous
+                ? List.of()
+                : postCacheService.getCachedPrivateFeedIds(((TokenBody) auth.getPrincipal()).getMemberId());
+
+        return postCustomRepository.findAllLoggedInByCursor(cursor, size, feedIds);
     }
 
     private Page<PostDetailResponse> readAllAnonymous(Pageable pageable) {

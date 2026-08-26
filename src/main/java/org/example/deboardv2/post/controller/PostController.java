@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.dto.PostDetailResponse;
+import org.example.deboardv2.post.dto.PostPageResponse;
 import org.example.deboardv2.post.dto.PostUpdateRequest;
 import jakarta.validation.Valid;
 import org.example.deboardv2.post.service.PostService;
@@ -28,10 +29,16 @@ public class PostController {
     public ResponseEntity<?> getAllPosts (
             @RequestParam(defaultValue = "title", required = false) String searchType,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
+        // cursor 있음 = 일반 조회(다음 목록) → keyset. 없음 = 첫 진입/URL 직접 점프 → offset
+        if (cursor != null && (keyword == null || keyword.isBlank())) {
+            return ResponseEntity.ok(postService.readAllByCursor(cursor, size));
+        }
+
         // sort = createdAt, desc -> ["createdAt", "desc"]
         Page<PostDetailResponse> postDtos;
 
@@ -40,7 +47,9 @@ public class PostController {
         }  else {
             postDtos = searchService.search(searchType, keyword, page, size);
         }
-        return ResponseEntity.ok(postDtos);
+        // offset 응답에도 nextCursor를 실어 이후 요청이 keyset으로 이어지게 함
+        return ResponseEntity.ok(PostPageResponse.ofOffset(
+                postDtos.getContent(), postDtos.getTotalPages(), postDtos.getNumber()));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 게시글을 조회합니다.")
@@ -53,7 +62,8 @@ public class PostController {
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 작성합니다.")
     @PostMapping("/posts")
     public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest postDto) {
-        return ResponseEntity.ok(postService.save(postDto));
+        PostDetailResponse save = postService.save(postDto);
+        return ResponseEntity.ok(save);
     }
 
     @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")

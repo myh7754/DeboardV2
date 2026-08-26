@@ -8,6 +8,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.deboardv2.likes.entity.QLikes;
+import org.example.deboardv2.post.dto.PostPageResponse;
+import org.example.deboardv2.post.dto.PostCursor;
 import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.example.deboardv2.post.entity.QPost;
 import org.example.deboardv2.rss.domain.QFeed;
@@ -152,7 +154,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
                 .leftJoin(qPost.externalAuthor, qExternalAuthor)
                 .leftJoin(qPost.feed, qFeed)
                 .where(qPost.id.in(ids))
-                .orderBy(qPost.createdAt.desc())
+                .orderBy(qPost.createdAt.desc(), qPost.id.desc())
                 .fetch();
     }
 
@@ -295,11 +297,12 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         int fetchSize = (int) pageable.getOffset() + pageable.getPageSize();
         String placeholders = String.join(",", Collections.nCopies(feedIds.size(), "?"));
 
+        // id DESC 타이브레이크 필수 — created_at 동률 시 정렬이 흔들리면 커서 발급/페이지 경계가 어긋남
         String sql = "SELECT id FROM (" +
-                "(SELECT id, created_at FROM post WHERE is_public = 1 ORDER BY created_at DESC LIMIT ?)" +
+                "(SELECT id, created_at FROM post WHERE is_public = 1 ORDER BY created_at DESC, id DESC LIMIT ?)" +
                 " UNION ALL " +
-                "(SELECT id, created_at FROM post WHERE is_public = 0 AND feed_id IN (" + placeholders + ") ORDER BY created_at DESC LIMIT ?)" +
-                ") AS combined ORDER BY created_at DESC LIMIT ? OFFSET ?";
+                "(SELECT id, created_at FROM post WHERE is_public = 0 AND feed_id IN (" + placeholders + ") ORDER BY created_at DESC, id DESC LIMIT ?)" +
+                ") AS combined ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?";
 
         List<Object> params = new ArrayList<>();
         params.add(fetchSize);
@@ -309,6 +312,63 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         params.add(pageable.getOffset());
 
         return jdbcTemplate.queryForList(sql, Long.class, params.toArray());
+    }
+
+    // ── keyset(cursor) 경로 ──────────────────────────────────────────────
+    // OFFSET 제거 → 브랜치별 fetch량이 (offset + size)에서 (size + 1) 고정으로 바뀜
+    @Override
+    @Transactional(readOnly = true)
+    public PostPageResponse findAllLoggedInByCursor(String cursor, int size, List<Long> feedIds) {
+        PostCursor from = (cursor == null || cursor.isBlank()) ? null : PostCursor.decode(cursor);
+
+        // size + 1 조회 후 넘치면 잘라냄 — 다음 페이지 존재 여부를 COUNT 쿼리 없이 판단
+        List<Long> ids = fetchIdsByCursor(from, size + 1, feedIds);
+        boolean hasNext = ids.size() > size;
+        if (hasNext) ids = ids.subList(0, size);
+
+        return PostPageResponse.ofCursor(fetchDetailsByIds(ids), hasNext);
+    }
+
+    private List<Long> fetchIdsByCursor(PostCursor from, int limit, List<Long> feedIds) {
+        // OR 전개형 필수. (created_at, id) < (?, ?) 튜플 비교는 MySQL이 두 갈래로 펼치지 않아
+        // is_public 만 범위 경계로 쓰고(key_len=1) 나머지는 스캔하며 필터링 → 깊이에 비례해 느려짐.
+        // 아래처럼 쓰면 두 번째 갈래에서 created_at 이 등호로 고정되어 id 까지 범위 경계가 됨(key_len=17).
+        String cursorCond = (from == null) ? ""
+                : " AND (created_at < ? OR (created_at = ? AND id < ?))";
+        List<Object> params = new ArrayList<>();
+
+        if (feedIds.isEmpty()) {
+            String sql = "SELECT id FROM post WHERE is_public = 1" + cursorCond +
+                    " ORDER BY created_at DESC, id DESC LIMIT ?";
+            addCursorParams(params, from);
+            params.add(limit);
+            return jdbcTemplate.queryForList(sql, Long.class, params.toArray());
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(feedIds.size(), "?"));
+        String sql = "SELECT id FROM (" +
+                "(SELECT id, created_at FROM post WHERE is_public = 1" + cursorCond +
+                " ORDER BY created_at DESC, id DESC LIMIT ?)" +
+                " UNION ALL " +
+                "(SELECT id, created_at FROM post WHERE is_public = 0 AND feed_id IN (" + placeholders + ")" + cursorCond +
+                " ORDER BY created_at DESC, id DESC LIMIT ?)" +
+                ") AS combined ORDER BY created_at DESC, id DESC LIMIT ?";
+
+        addCursorParams(params, from);
+        params.add(limit);
+        params.addAll(feedIds);
+        addCursorParams(params, from);
+        params.add(limit);
+        params.add(limit);
+
+        return jdbcTemplate.queryForList(sql, Long.class, params.toArray());
+    }
+
+    private void addCursorParams(List<Object> params, PostCursor from) {
+        if (from == null) return;
+        params.add(from.createdAt());   // created_at < ?
+        params.add(from.createdAt());   // created_at = ?
+        params.add(from.id());          // id < ?
     }
 
     @Override
