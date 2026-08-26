@@ -1,37 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Spring Boot 기본 로깅 설정 포함 -->
+    <!-- Spring Boot 기본 로깅 설정 포함 (CONSOLE_LOG_PATTERN 등 프로퍼티 제공) -->
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
     <!-- 로그 경로: 환경변수 LOG_PATH 없으면 로컬 기본값 'logs' -->
     <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
 
-    <!-- Hibernate SQL: local 환경에서만 DEBUG -->
-    <springProfile name="local">
-        <logger name="org.hibernate.SQL" level="DEBUG"/>
-        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="DEBUG"/>
-    </springProfile>
-
-    <appender name="CONSOLE_LOCAL" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-        </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-    </appender>
-
-    <appender name="CONSOLE_PROD" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-        </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>WARN</level>
-        </filter>
-    </appender>
-
-    <!-- JSON 로그 파일 Appender -->
+    <!-- JSON 로그 파일 Appender (모든 프로필 공통) -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/application.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -56,14 +31,37 @@
         </encoder>
     </appender>
 
-    <!-- Root Logger -->
+    <!-- local: 콘솔 INFO 이상 + Hibernate SQL DEBUG -->
     <springProfile name="local">
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="DEBUG"/>
+
+        <appender name="CONSOLE_LOCAL" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>WARN</level>
+            </filter>
+        </appender>
+
         <root level="DEBUG">
             <appender-ref ref="CONSOLE_LOCAL"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
+
+    <!-- dev, prod: 콘솔 WARN 이상 -->
     <springProfile name="dev,prod">
+        <appender name="CONSOLE_PROD" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>WARN</level>
+            </filter>
+        </appender>
+
         <root level="WARN">
             <appender-ref ref="CONSOLE_PROD"/>
             <appender-ref ref="FILE"/>
