@@ -146,7 +146,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
     private List<PostDetailResponse> fetchDetailsByIds(List<Long> ids) {
         if (ids.isEmpty()) return List.of();
         return queryFactory
-                .select(postDetailsProjection())
+                .select(postListProjection())
                 .from(qPost)
                 .leftJoin(qPost.author, qUser)
                 .leftJoin(qPost.externalAuthor, qExternalAuthor)
@@ -181,7 +181,7 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         if (ids.isEmpty()) return List.of();
 
         return queryFactory
-                .select(postDetailsProjection())
+                .select(postListProjection())
                 .from(qPost)
                 .leftJoin(qPost.author, qUser)
                 .leftJoin(qPost.externalAuthor, qExternalAuthor)
@@ -212,9 +212,22 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
         );
     }
 
+    // 목록용 — content(LONGTEXT) 제외. 768바이트를 넘는 값은 InnoDB가 오버플로 페이지에 따로 저장하므로
+    // 목록 10건을 읽을 때마다 본문만큼의 임의 I/O가 추가로 발생한다. 목록 화면은 본문을 쓰지 않는다.
+    private QBean<PostDetailResponse> postListProjection() {
+        return Projections.fields(
+                PostDetailResponse.class,
+                qPost.id,
+                qPost.title,
+                qUser.nickname.coalesce(qExternalAuthor.name).as("nickname"),
+                qPost.createdAt,
+                qPost.likeCount
+        );
+    }
+
     private List<PostDetailResponse> getPostLikeList(Pageable pageable, BooleanExpression finalCondition) {
         return queryFactory
-                .select(postDetailsProjection())
+                .select(postListProjection())
                 .from(qLikes)
                 .join(qLikes.post, qPost)
                 .leftJoin(qPost.author, qUser)
