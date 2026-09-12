@@ -3,6 +3,8 @@ package org.example.deboardv2.post.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.example.deboardv2.post.dto.PostCreateRequest;
 import org.example.deboardv2.post.dto.PostDetailResponse;
 import org.example.deboardv2.post.dto.PostPageCacheDto;
@@ -48,6 +50,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDetailResponse save(PostCreateRequest post) {
         User user = userService.getCurrentUser();
+        post.setContent(cleanHtml(post.getContent()));
         Post save = postRepository.save(Post.from(post, user));
         postCacheService.evict(RedisKeyConstants.POST_PUBLIC_PAGE + "0");
         postCacheService.evictPublicCount();
@@ -165,7 +168,29 @@ public class PostServiceImpl implements PostService {
     public void update(PostUpdateRequest dto, Long postId) {
         authService.authCheck(postId, "POST");
         Post post = getPostById(postId);
+        dto.setContent(cleanHtml(dto.getContent()));
         post.update(dto);
+    }
+
+    /**
+     * 에디터가 보낸 본문에서 실행 가능한 것을 걷어낸다.
+     *
+     * 프론트의 DOMPurify 는 브라우저에서만 동작하므로 API 를 직접 호출하면 무력하다.
+     * 여기가 신뢰 경계다.
+     *
+     * RSS 수집 경로(Post.fromRss)는 통과시키지 않는다 — 외부 블로그 원문 HTML 은
+     * 허용 범위가 다르고, 지금 같이 묶으면 이미 저장된 글의 렌더링이 바뀐다.
+     */
+    // 테스트에서 직접 부를 수 있도록 package-private
+    static String cleanHtml(String html) {
+        if (html == null) {
+            return null;
+        }
+        // relaxed 에 에디터가 쓰는 s(취소선), hr(구분선), 링크 속성을 더한다.
+        // img[src] 는 http/https 만 통과하므로 base64 이미지를 본문에 박는 경로도 함께 막힌다.
+        return Jsoup.clean(html, Safelist.relaxed()
+                .addTags("s", "hr")
+                .addAttributes("a", "target", "rel"));
     }
 
 
