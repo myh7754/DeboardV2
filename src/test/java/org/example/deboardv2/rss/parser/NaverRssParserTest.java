@@ -104,9 +104,10 @@ class NaverRssParserTest {
     }
 
     @Test
-    @DisplayName("parse() - publishedDate가 null이면 publishedAt null 반환")
-    void parse_returnsNullPublishedAt_whenPublishedDateNull() {
+    @DisplayName("parse() - D2 Atom처럼 <published> 없이 <updated>만 있으면 updatedDate를 publishedAt으로 사용")
+    void parse_fallsBackToUpdatedDate_whenPublishedDateNull() {
         SyndEntry entry = mock(SyndEntry.class);
+        java.util.Date updated = new java.util.Date(1_700_000_000_000L);
 
         given(entry.getTitle()).willReturn("제목");
         given(entry.getLink()).willReturn("https://d2.naver.com/helloworld/3");
@@ -114,9 +115,11 @@ class NaverRssParserTest {
         given(entry.getContents()).willReturn(Collections.emptyList());
         given(entry.getDescription()).willReturn(null);
         given(entry.getPublishedDate()).willReturn(null);
+        given(entry.getUpdatedDate()).willReturn(updated);
 
         RssPost result = parser.parse(entry);
 
-        assertThat(result.getPublishedAt()).isNull();
+        assertThat(result.getPublishedAt())
+                .isEqualTo(java.time.LocalDateTime.ofInstant(updated.toInstant(), java.time.ZoneId.systemDefault()));
     }
 }
