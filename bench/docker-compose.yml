@@ -1,0 +1,136 @@
+# Deboard 페이지네이션 성능 측정 전용 스택.
+# 운영 compose(ClaudeCode/docker-compose.yml)와 별개로, 측정에 필요한 4개만 띄운다.
+# grafana/loki/promtail/prometheus는 측정값에 필요 없어서 뺐다.
+name: deboard-bench
+
+services:
+  mysql:
+    image: mysql:8.0-oracle
+    command:
+      # 벤치 중엔 복제/바이너리로그가 불필요하고, 1000만 건 증식 속도만 깎아먹는다
+      - --skip-log-bin
+      # 기본값 128M로는 1000만 건이 통째로 디스크를 때린다. 측정 PC 램의 50~60%까지 올려도 된다
+      - --innodb-buffer-pool-size=${MYSQL_BUFFER_POOL:-2G}
+      - --innodb-flush-log-at-trx-commit=2
+      - --max-connections=500
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: deboard
+      MYSQL_USER: ${DB_USERNAME:-bench}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-benchpw}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    # 소스를 빌드하지 않고 미리 만들어둔 app.jar를 얹기만 한다.
+    # 측정 PC에는 JDK도 gradle도 필요 없다. Docker만 있으면 된다.
+    # (app.jar가 없으면 Docker가 같은 이름의 '디렉터리'를 만들어버리므로
+    #  run 스크립트가 실행 전에 파일 존재를 먼저 확인한다.)
+    image: amazoncorretto:21-alpine
+    working_dir: /app
+    volumes:
+      - ./app.jar:/app/app.jar:ro
+    # 원본 Dockerfile의 ENTRYPOINT는 EC2 t3.small용 -Xmx384m로 고정돼 있다.
+    # 측정 머신에 맞게 HEAP으로 조절한다.
+    entrypoint: ["sh", "-c", "exec java -Xms${HEAP:-1g} -Xmx${HEAP:-1g} -jar /app/app.jar"]
+    environment:
+      # prod 프로필이어야 DB가 mysql:3306, redis가 redis:6379로 잡히고
+      # DummyDataLoader(@Profile("prod"))가 users/feed/post 시드를 만든다
+      SPRING_PROFILES_ACTIVE: prod
+      # prod는 ddl-auto: none이라 새 머신엔 테이블이 없다.
+      # update로 켜야 Post의 @Table(indexes=...) 두 개까지 같이 생성된다.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # prod 기본값은 10 (EC2 t3.small 2 vCPU/2GB에 맞춘 값). 그 값으로 VUS 500을 때리면
+      # offset이든 keyset이든 똑같이 풀 앞에서 줄을 서서, 쿼리가 아니라 풀 크기를 재게 된다.
+      # 그래서 예전에 실제로 측정했던 application-local.yml 의 값(20)으로 맞춘다.
+      # 더 키우지 않는 이유: 커넥션은 많을수록 좋은 게 아니다. 대략 코어 수 x 2 를 넘으면
+      # 컨텍스트 스위칭과 락 경합으로 처리량이 오히려 떨어진다(HikariCP 권장도 작은 풀이다).
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_POOL:-20}
+      # Redis도 local 프로필 값(100)으로. Lettuce는 멀티플렉싱이라 커넥션당 비용이 작다.
+      SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: ${REDIS_POOL:-100}
+      # open-in-view=true(스프링 기본)면 세션이 요청 끝까지 열려 있어 커넥션 점유시간이 늘어난다.
+      # 측정 대상은 쿼리지 뷰 렌더링이 아니므로 끈다.
+      SPRING_JPA_OPEN_IN_VIEW: ${OPEN_IN_VIEW:-false}
+      # 측정 중 RSS 스케줄러가 끼어들면 노이즈가 된다. 매년 1월 1일로 밀어둔다.
+      RSS_SCHEDULE_CRON: "0 0 0 1 1 *"
+      # prod 프로필의 org.hibernate.SQL=debug는 500 VU 부하에서 순수 오버헤드다
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: warn
+      LOGGING_LEVEL_ORG_HIBERNATE_TYPE: warn
+      LOGGING_LEVEL_ORG_EXAMPLE_DEBOARDV2: warn
+      LOG_PATH: /app/logs
+      DB_USERNAME: ${DB_USERNAME:-bench}
+      DB_PASSWORD: ${DB_PASSWORD:-benchpw}
+      MAIL_USERNAME: ${MAIL_USERNAME:-bench@example.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-unused}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-unused}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-unused}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-unused}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-unused}
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-unused}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-unused}
+      JWT_APP_KEY: ${JWT_APP_KEY:-bench-only-app-key-not-a-secret-0123456789}
+      JWT_ORIGIN_KEY: ${JWT_ORIGIN_KEY:-bench-only-origin-key-not-a-secret-0123456789}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # docker compose up -d 만으로 1000만 건이 채워지도록 하는 시더.
+  # 백엔드의 DummyDataLoader가 post 50만 건을 넣을 때까지 기다렸다가
+  # seed.sql로 created_at을 펼치고 목표 건수까지 증식한 뒤 스스로 종료한다.
+  # 이미 목표치면 아무것도 안 하고 끝나므로, 몇 번을 다시 올려도 안전하다.
+  # 진행 상황: docker compose logs -f seeder
+  seeder:
+    image: mysql:8.0-oracle
+    depends_on:
+      mysql:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      TARGET_ROWS: ${TARGET_ROWS:-10000000}
+    volumes:
+      - ./seed.sql:/seed.sql:ro
+      - ./seeder.sh:/seeder.sh:ro
+    entrypoint: ["sh", "/seeder.sh"]
+    # 한 번 돌고 끝나는 일회성 작업이다. 재시작시키면 안 된다.
+    restart: "no"
+
+  k6:
+    image: grafana/k6:latest
+    profiles: ["k6"]
+    volumes:
+      - ./k6:/scripts
+      - ./k6/out:/out
+    environment:
+      # 같은 compose 네트워크 안이라 host.docker.internal이 필요 없다
+      BASE_URL: http://backend:8080
+      MODE: ${MODE:-keyset}
+      PAGE: ${PAGE:-999}
+      VUS: ${VUS:-500}
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /out/report.html
+    ports:
+      - "5665:5665"
+    command: run /scripts/load-test.js
+
+volumes:
+  mysql-data:

@@ -1,0 +1,130 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  # ================================
+  # CI — PR과 push 모두에서 실행
+  # ================================
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # application-test.yml의 로컬 계정 대신 CI 컨테이너 계정을 주입한다.
+      # Spring relaxed binding이 yml보다 환경변수를 우선한다.
+      - name: Run tests
+        env:
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: ci-test
+        run: ./gradlew test --no-daemon
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7
+
+  # ================================
+  # CD — test 통과 + push일 때만 실행
+  # PR에서는 배포하지 않는다.
+  # ================================
+  deploy:
+    needs: test
+    if: github.event_name == 'push'
+    # main → prod 라벨 러너, dev → dev 라벨 러너
+    runs-on: [ self-hosted, "${{ github.ref_name == 'main' && 'prod' || 'dev' }}" ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 빌드 전 디스크 정리 (빌드 캐시만 제거, 실행 중인 이미지 유지)
+      - name: Free disk space
+        run: |
+          docker builder prune -af
+          df -h
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: yhfmg/deboard-backend:latest
+          cache-from: type=registry,ref=yhfmg/deboard-backend:buildcache
+          cache-to: type=registry,ref=yhfmg/deboard-backend:buildcache,mode=max
+
+      # 빌드 캐시가 deploy 전에 남아있으면 디스크 부족 발생
+      - name: Post-build cleanup
+        run: |
+          docker builder prune -af
+          docker image prune -f
+          df -h
+
+      # 러너가 서버 위에서 돌고 있으므로 SSH 불필요
+      - name: Deploy
+        run: |
+          cd /home/myh7754/deboard
+          docker pull yhfmg/deboard-backend:latest
+          docker compose --profile prod up -d --no-deps backend
+          docker image prune -af
+          docker builder prune -af
+
+      - name: Cleanup buildx builders
+        if: always()
+        run: |
+          docker buildx ls --format "{{.Name}}" | grep -v "^default$" | xargs -r docker buildx rm || true

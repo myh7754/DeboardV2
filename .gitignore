@@ -53,3 +53,8 @@ docs/*
 ### Claude Code ###
 .claude/
 .mcp.json
+# 벤치마크용 빌드 산출물 (84MB) — 소스에서 다시 만들면 된다
+bench/app.jar
+bench/.env
+bench/k6/out/*
+!bench/k6/out/.gitkeep

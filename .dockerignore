@@ -1,0 +1,8 @@
+/build
+/bin
+/.git
+/.gradle
+/.idea
+/logs
+/bench
+*.log

@@ -1,6 +1,7 @@
 package org.example.deboardv2.post.repository;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.QBean;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -68,8 +69,17 @@ public class PostCustomRepositoryImpl implements PostCustomRepository {
             case "content":
                 return qPost.content.containsIgnoreCase(keyword);
             case "author":
-                return qUser.nickname.containsIgnoreCase(keyword)
-                        .or(qExternalAuthor.name.containsIgnoreCase(keyword));
+                // ponytail: qUser/qExternalAuthor를 직접 참조하면 이 조건을 받는
+                // id 조회 쿼리(getPostList/fetchIdAndDate/getCappedTotalCount)에
+                // join이 없어 SemanticException이 난다. join을 추가하면 title/content
+                // 검색까지 join 비용을 물으므로, FK 기반 서브쿼리로 self-contained하게 만든다.
+                // qPost.author.id는 post.author_id 컬럼을 직접 읽어 join이 발생하지 않는다.
+                return qPost.author.id.in(
+                                JPAExpressions.select(qUser.id).from(qUser)
+                                        .where(qUser.nickname.containsIgnoreCase(keyword)))
+                        .or(qPost.externalAuthor.id.in(
+                                JPAExpressions.select(qExternalAuthor.id).from(qExternalAuthor)
+                                        .where(qExternalAuthor.name.containsIgnoreCase(keyword))));
             case "titleContent":
                 return qPost.title.containsIgnoreCase(keyword)
                         .or(qPost.content.containsIgnoreCase(keyword));
