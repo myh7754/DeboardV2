@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ControllerApiTest {
 
     private static final String TEST_APP_KEY =
-            "4B398FBF0C39348DFD0E7188B151F3F734ACCD37006BCA207077FCA52701E3D5";
+            "test-only-app-key-not-a-real-secret-000000000000000000000000";
 
     @Autowired
     MockMvc mockMvc;

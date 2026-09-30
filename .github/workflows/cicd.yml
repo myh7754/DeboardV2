@@ -54,12 +54,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # application-test.yml의 로컬 계정 대신 CI 컨테이너 계정을 주입한다.
-      # Spring relaxed binding이 yml보다 환경변수를 우선한다.
+      # application-test.yml이 ${TEST_DB_USERNAME:root} 형태로 읽는 값.
+      # 기본값만으로도 돌지만, 위 mysql 서비스와 짝이라는 걸 드러내려고 명시한다.
       - name: Run tests
         env:
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ci-test
+          TEST_DB_USERNAME: root
+          TEST_DB_PASSWORD: ci-test
         run: ./gradlew test --no-daemon
 
       - name: Upload test report

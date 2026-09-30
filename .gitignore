@@ -36,7 +36,9 @@ out/
 ### VS Code ###
 .vscode/
 /src/main/resources/logback-spring.xml
-/src/test/resources/application-test.yml
+# application-test.yml은 이제 추적한다 (CI가 읽어야 함). 실제 계정은 담지 않는다.
+# 로컬 DB가 root/ci-test가 아니면 TEST_DB_USERNAME / TEST_DB_PASSWORD 를 환경변수로 준다.
+src/test/resources/application-test.yml.local.bak
 .env
 
 *.log
