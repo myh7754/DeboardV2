@@ -1,8 +1,9 @@
 name: CI/CD
 
 on:
+  # 모든 브랜치 푸시에서 테스트를 돌린다 — PR 열기 전에 피드백을 받기 위해.
+  # 배포 대상 브랜치 제한은 deploy 잡의 if에서 한다.
   push:
-    branches: [ main, dev ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -75,7 +76,9 @@ jobs:
   # ================================
   deploy:
     needs: test
-    if: github.event_name == 'push'
+    # push 트리거를 전체 브랜치로 열었으므로, 배포 대상은 여기서 좁힌다.
+    # 이 조건이 없으면 feature 브랜치 푸시가 dev 서버로 배포된다.
+    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev')
     # main → prod 라벨 러너, dev → dev 라벨 러너
     runs-on: [ self-hosted, "${{ github.ref_name == 'main' && 'prod' || 'dev' }}" ]
 
