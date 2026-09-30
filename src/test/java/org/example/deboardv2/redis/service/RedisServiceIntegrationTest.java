@@ -221,7 +221,7 @@ class RedisServiceIntegrationTest {
 
         // then
         Long size = redisTemplate.opsForZSet().zCard(key);
-        assertThat(size).isNull(); // 키 자체가 생성되지 않음
+        assertThat(size).isEqualTo(0L); // ZCARD는 없는 키에 nil이 아니라 0을 반환한다
     }
 
     // -----------------------------------------------------------------------

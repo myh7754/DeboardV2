@@ -49,7 +49,9 @@ public class NaverRssParser implements RssParserStrategy {
                 .link(entry.getLink())
                 .author(extractAuthor(entry))
                 .content(extractContent(entry))
-                .publishedAt(convertToLocalDateTime(entry.getPublishedDate()))
+                // D2 Atom은 <published> 없이 <updated>만 제공
+                .publishedAt(convertToLocalDateTime(
+                        entry.getPublishedDate() != null ? entry.getPublishedDate() : entry.getUpdatedDate()))
                 .build();
     }
 

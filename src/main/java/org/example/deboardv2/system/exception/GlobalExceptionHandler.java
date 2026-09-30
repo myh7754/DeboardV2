@@ -8,10 +8,13 @@ import org.example.deboardv2.system.config.TraceIdFilter;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
+
+import java.util.stream.Collectors;
 
 
 @RestControllerAdvice
@@ -38,6 +41,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(errorCode.getStatus())
                 .body(new ErrorResponse(errorCode.getMessage(), errorCode.getStatus().value()));
+    }
+
+    // @Valid 실패는 클라이언트 잘못이므로 400.
+    // 이 핸들러가 없으면 아래 Exception.class가 삼켜서 500으로 나간다.
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e,
+                                                       HttpServletRequest request) {
+        logException("warn", e, request);
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(message, HttpStatus.BAD_REQUEST.value()));
     }
 
     @ExceptionHandler(Exception.class)

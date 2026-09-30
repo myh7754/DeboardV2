@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class RssParserService {
+    private static final int MAX_LINK_LENGTH = 500; // Post.link @Column(length = 500)
     private final List<RssParserStrategy> parserList;
     private final PostRepository postRepository;
     private final ExternalAuthorService externalAuthorService;
@@ -121,14 +122,19 @@ public class RssParserService {
     @Transactional(readOnly = true)
     public List<SyndEntry> extractPostListImprove(Feed dtoFeed, List<SyndEntry> entries) {
         String key = RedisKeyConstants.RSS_FEED + dtoFeed.getId();
+        // ponytail: post.link 컬럼 길이 초과 글은 저장 불가라 건너뜀. 필요해지면 컬럼 확장 또는 링크 해시 컬럼으로
+        entries = entries.stream()
+                .filter(e -> {
+                    boolean fits = e.getLink() != null && e.getLink().length() <= MAX_LINK_LENGTH;
+                    if (!fits) log.warn("rss.link.too_long feedUrl={} link={}", dtoFeed.getFeedUrl(), e.getLink());
+                    return fits;
+                })
+                .toList();
         List<String> links = entries.stream()
                         .map(SyndEntry::getLink)
                         .toList();
         if (!redisService.hasKey(key)) {
-            Set<String> alreadyInDb = postRepository.findExistingLinksByFeed(dtoFeed, links);
-            return entries.stream()
-                    .filter(e -> !alreadyInDb.contains(e.getLink()))
-                    .collect(Collectors.toList());
+            return excludeExistingInDb(dtoFeed, entries);
         }
 
         List<Boolean> existenceList = redisService.checkLinksExistence(key, links);
@@ -138,7 +144,16 @@ public class RssParserService {
                 newEntries.add(entries.get(i));
             }
         }
-        return newEntries;
+        // Redis는 최근 50개만 유지해 피드에 남은 글도 밀려날 수 있음 → 캐시 미스는 DB로 한 번 더 확인
+        return newEntries.isEmpty() ? newEntries : excludeExistingInDb(dtoFeed, newEntries);
+    }
+
+    private List<SyndEntry> excludeExistingInDb(Feed dtoFeed, List<SyndEntry> entries) {
+        List<String> links = entries.stream().map(SyndEntry::getLink).toList();
+        Set<String> alreadyInDb = postRepository.findExistingLinksByFeed(dtoFeed, links);
+        return entries.stream()
+                .filter(e -> !alreadyInDb.contains(e.getLink()))
+                .collect(Collectors.toList());
     }
 
 }
